@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 
 
         // If any of the processess does not respond in given timeframe, close them all
-        if (cnt_server > threshold || cnt_window > threshold || cnt_km > threshold || cnt_drone > threshold)
+        if (cnt_server > THRESHOLD || cnt_window > THRESHOLD || cnt_km > THRESHOLD || cnt_drone > THRESHOLD)
         {
             send_sigint_to_all();
         }

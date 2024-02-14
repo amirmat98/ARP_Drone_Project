@@ -40,4 +40,6 @@
 
 #define F_MAX 20.0 // Maximal force that can be acted on the drone's motors
 
+#define THRESHOLD 5 // Threshold for counters
+
 #endif // CONSTANTS_H

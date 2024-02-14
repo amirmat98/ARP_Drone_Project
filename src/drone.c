@@ -190,3 +190,13 @@ void differential_equations(double *position, double *velocity, double force, do
     if (*position > *max_pos) { *position = *max_pos - 1; }
 
 }
+
+// Moving the drone step by step as initial development
+void step_method(int *x, int *y, int action_x, int action_y)
+{
+    (*x) = (*x) + action_x;
+    (*y) = (*y) + action_y;
+
+
+    //sprintf(shared_action, "%d,%d", 0, 0); // Zeros written on action memory
+}
