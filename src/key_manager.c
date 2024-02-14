@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <ctype.h>
@@ -21,6 +22,7 @@ void *ptr_action;           // Shared memory for Drone Position
 sem_t *sem_key;             // Semaphore for key presses
 sem_t *sem_action;          // Semaphore for drone positions
 
+/*
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
     // printf("Received signal number: %d \n", signo);
@@ -43,9 +45,16 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
         // printf("SIGUSR2 SENT SUCCESSFULLY\n");
     }
 }
+*/
 
-int main()
+// Pipes
+int key_pressing[2];
+
+int main(int argc, char *argv[])
 {
+
+    get_args(argc, argv);
+
     struct sigaction sa;
     sa.sa_sigaction = signal_handler; 
     sa.sa_flags = SA_SIGINFO;
@@ -72,7 +81,8 @@ int main()
         /*THIS SECTION IS FOR OBTAINING KEY INPUT*/
 
         sem_wait(sem_key);  // Wait for the semaphore to be signaled from interface.c process
-        int pressed_key = *(int*)ptr_key;    // Read the pressed key from shared memory 
+        //int pressed_key = *(int*)ptr_key;    // Read the pressed key from shared memory 
+        int pressed_key = read_key_from_pipe(key_pressing[0]);
         printf("Pressed key: %c\n", (char)pressed_key);
         fflush(stdout);
 
@@ -98,6 +108,47 @@ int main()
     return 0;
 
 }
+
+int read_key_from_pipe (int pipe_des)
+{
+    char msg[MSG_LEN];
+
+    ssize_t bytes_read = read(pipe_des, msg, sizeof(msg));
+
+    printf("succesfully read from window\n");
+    int pressed_key = msg[0];
+    return pressed_key;
+}
+
+void get_args(int argc, char *argv[])
+{
+    sscanf(argv[1], "%d %d", &key_pressing[0], &key_pressing[1]);
+}
+
+
+void signal_handler(int signo, siginfo_t *siginfo, void *context) 
+{
+    // printf("Received signal number: %d \n", signo);
+    if  (signo == SIGINT)
+    {
+        printf("Caught SIGINT \n");
+        // close all semaphores
+        sem_close(sem_key);
+        sem_close(sem_action);
+
+        printf("Succesfully closed all semaphores\n");
+        exit(1);
+    }
+    if (signo == SIGUSR1)
+    {
+        // Get watchdog's pid
+        pid_t wd_pid = siginfo->si_pid;
+        // inform on your condition
+        kill(wd_pid, SIGUSR2);
+        // printf("SIGUSR2 SENT SUCCESSFULLY\n");
+    }
+}
+
 
 // US Keyboard assumed
 char* determine_action(int pressed_key, char *shared_action)

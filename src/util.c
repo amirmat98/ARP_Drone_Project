@@ -1,5 +1,6 @@
 #include "constants.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -9,7 +10,7 @@
 #include <semaphore.h>
 #include <signal.h>
 
-void publish_pid_to_wd(int process_symbol, pid_t pid)
+void publish_pid_to_wd(char process_symbol, pid_t pid)
 {   
     int shm_wd_fd = shm_open(SHAREMEMORY_WD, O_RDWR, 0666);
     char *ptr_wd = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_wd_fd, 0);
@@ -36,4 +37,14 @@ void publish_pid_to_wd(int process_symbol, pid_t pid)
     // Detach from shared memorry
     munmap(ptr_wd,SIZE_SHM);
     // When all is done unlink from shm
+}
+
+void write_to_pipe(int pipe_des, char *message)
+{
+    ssize_t bytes_written = write(pipe_des, message, sizeof(message));
+    if (bytes_written == -1)
+    {
+        perror("Write went wrong");
+        exit(1);
+    }
 }

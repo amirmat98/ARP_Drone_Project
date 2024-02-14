@@ -7,13 +7,26 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 
+// Pipes
+int key_pressing[2];
+
 int main(int argc, char *argv[])
 {
+    // PIDs
     pid_t server_pid;
     pid_t window_pid;
     pid_t km_pid;
     pid_t drone_pid;
     pid_t wd_pid;
+
+    create_pipes();
+
+    // File des
+    char key_manager_des[80];
+    char window_des[80];
+
+    sprintf(key_manager_des, "%d %d", key_pressing[0], key_pressing[1]);
+    sprintf(window_des, "%d %d", key_pressing[0], key_pressing[1]);
 
     int delay = 100000; // Time delay between next spawns
     int number_process = 0; //number of processes
@@ -22,10 +35,10 @@ int main(int argc, char *argv[])
     char* server_args[] = {"konsole", "-e", "./build/server", NULL};
     server_pid = create_child(server_args[0], server_args);
     number_process++;
-    usleep(delay*10); //little bit more time for server
+    usleep(delay*10); // little bit more time for server
 
     /* Keyboard manager */
-    char* km_args[] = {"konsole", "-e", "./build/key_manager", NULL};
+    char* km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_des, NULL};
     km_pid = create_child(km_args[0], km_args);
     number_process++;
     usleep(delay);
@@ -44,8 +57,8 @@ int main(int argc, char *argv[])
     
 
     /* Window - Interface */
-    char* ui_args[] = {"konsole", "-e", "./build/interface", NULL};
-    window_pid = create_child(ui_args[0], ui_args);
+    char* window_args[] = {"konsole", "-e", "./build/interface", window_des, NULL};
+    window_pid = create_child(window_args[0], window_args);
     number_process++;
     usleep(delay);
 
@@ -64,6 +77,13 @@ int main(int argc, char *argv[])
     printf("All child processes closed, closing main process...\n");
     return 0;
 
+}
+
+void create_pipes()
+{
+    pipe(key_pressing);
+
+    printf("Pipes Succesfully created");
 }
 
 int create_child(const char *program, char **arg_list)
