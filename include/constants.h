@@ -19,6 +19,9 @@
 #define SHAREMEMORY_ACTION "/shared_control"
 #define SEMAPHORE_ACTION "/my_semaphore_3"
 
+// Pipes Constants
+# define MSG_LEN 80
+
 // Special value to indicate no key pressed
 #define NO_KEY_PRESSED 0
 
@@ -34,6 +37,7 @@
 
 #define SLEEP_DRONE 100000  // To let the interface.c process execute first write the initial positions.
 
+// Drone Constants
 #define MASS 1.0    // Mass of the object
 #define DAMPING 1 // Damping coefficient
 #define D_T 0.1 // Time interval in seconds

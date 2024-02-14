@@ -1,13 +1,16 @@
 #include "interface.h"
 #include "constants.h"
 #include "util.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
 #include <ncurses.h>
 #include <semaphore.h>
@@ -22,6 +25,7 @@ char *ptr_pos;          // Shared memory for Drone Position
 sem_t *sem_key;         // Semaphore for key presses
 sem_t *sem_pos;         // Semaphore for drone positions
 
+/*
 //WatchDog
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
@@ -47,9 +51,16 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
         // printf("SIGUSR2 SENT SUCCESSFULLY\n");
     }
 }
+*/
 
-int main()
+// Pipes
+int key_pressing[2];
+
+int main(int argc, char *argv[])
 {
+    get_args(argc, argv);
+
+
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
     sa.sa_flags = SA_SIGINFO;
@@ -59,12 +70,12 @@ int main()
     publish_pid_to_wd(WINDOW_SYM, getpid());
 
     // Shared memory for KEY PRESSING
-    int shm_key_fd = shm_open(SHAREMEMORY_KEY, O_RDWR, 0666);
+    shm_key_fd = shm_open(SHAREMEMORY_KEY, O_RDWR, 0666);
     ptr_key = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_key_fd, 0);
 
 
     // Shared memory for DRONE POSITION
-    int shm_pos_fd = shm_open(SHAREMEMORY_POSITION, O_RDWR, 0666);
+    shm_pos_fd = shm_open(SHAREMEMORY_POSITION, O_RDWR, 0666);
     ptr_pos = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_pos_fd, 0);
 
     sem_key = sem_open(SEMAPHORE_KEY, 0);
@@ -94,10 +105,15 @@ int main()
         sem_wait(sem_pos); // Wait for the semaphore to be signaled from drone.c process
         // Obtain the position values from shared memory
         sscanf(ptr_pos, "%d,%d,%d,%d", &drone_x, &drone_y, &max_x, &max_y);
+
         // Create the window
-        create_window(max_x, max_y);
+        //create_window(max_x, max_y);
         // Draw the drone on the screen based on the obtained positions.
-        draw_drone(drone_x, drone_y);
+        //draw_drone(drone_x, drone_y);
+
+        // Create the window
+        draw_window(max_x, max_y, drone_x, drone_y);
+
         // Call the function that obtains the key that has been pressed.
         handle_input(ptr_key, sem_key);
 
@@ -117,7 +133,36 @@ int main()
     return 0;
 }
 
-void create_window(int max_x, int max_y)
+void get_args(int argc, char *argv[])
+{
+    sscanf(argv[1], "%d %d", &key_pressing[0], &key_pressing[1]);
+}
+void signal_handler(int signo, siginfo_t *siginfo, void *context) 
+{
+    // printf(" Received signal number: %d \n", signo);
+    if( signo == SIGINT)
+    {
+        printf("Caught SIGINT \n");
+        // close all semaphores
+        sem_close(sem_key);
+        sem_close(sem_pos);
+
+        printf("Succesfully closed all semaphores\n");
+        sleep(2);
+        exit(1);
+    }
+    if (signo == SIGUSR1)
+    {
+        //TODO REFRESH SCREEN
+        // Get watchdog's pid
+        pid_t wd_pid = siginfo->si_pid;
+        // inform on your condition
+        kill(wd_pid, SIGUSR2);
+        // printf("SIGUSR2 SENT SUCCESSFULLY\n");
+    }
+}
+
+void draw_window(int max_x, int max_y, int drone_x, int drone_y)
 {
     // Clear the screen
     clear();
@@ -132,26 +177,26 @@ void create_window(int max_x, int max_y)
     // Print a title in the top center part of the window
     mvprintw(0, (new_max_x - 11) / 2, "Drone Control");
 
+    // Draw a plus sign to represent the drone
+    mvaddch(drone_x, drone_y, '+' | COLOR_PAIR(1));
+
     // Refresh the screen to apply changes
     refresh();
 }
 
-void draw_drone(int drone_x, int drone_y)
-{
-
-    // Draw a plus sign to represent the drone
-    mvaddch(drone_y, drone_x, '+' | COLOR_PAIR(1));
-
-    refresh();
-}
 
 void handle_input(int *shared_key, sem_t *semaphore)
 {
-    int ch;
-    if ((ch = getch()) != ERR)
+    int temp_char;
+    if ((temp_char = getch()) != ERR)
     {
+        // write char to the pipe
+        char msg[MSG_LEN];
+        sprintf(msg, "%c", temp_char);
+        write_to_pipe(key_pressing[1], msg);
+
         // Store the pressed key in shared memory
-        *shared_key = ch;
+        *shared_key = temp_char;
     }
     flushinp(); // Clear the input buffer
 }
