@@ -13,6 +13,7 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <string.h>
 
 /* Global variables */
 // Initialize shared memory for drone positions
@@ -83,10 +84,12 @@ int main()
     double pos_x = (double)x;
     double v_x = 0.0;    // Initial velocity of x
     double force_x = 0; // Applied force in the x direction
+    double external_force_x = 0; // Initial external force
 
     double pos_y = (double)y;
     double v_y = 0.0;    // Initial velocity of y
     double force_y = 0; // Applied force in the y direction
+    double external_force_y = 0; // Initial external force
     
     bool euler_method_flag = true; // For testing purposes.
 
@@ -96,6 +99,7 @@ int main()
         int x_i; int y_i;
         sscanf(shared_position, "%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
         sscanf(shared_action, "%d,%d", &action_x, &action_y);
+
 
         /* DRONE CONTROL WITH THE DYNAMICS FORMULA*/
         if(euler_method_flag)
@@ -122,16 +126,29 @@ int main()
                 force_y = 0.0;
             }
 
+            // Calculate the EXTERNAL FORCE from obstacles and targets
+            // OBSTACLES
+            char obstacles_msg[] = "O[7]35,11|100,5|16,30|88,7|130,40|53,15|60,10";
+            Obstacles obstacles[30];
+            int number_obstacles;
+            parse_obstacles_Msg(obstacles_msg, obstacles, &number_obstacles);
+
+            for (int i = 0; i < number_obstacles; i++)
+            {
+                calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
+            }
+
             // Calling the function
             double max_x_f = (double)max_x;
             double max_y_f = (double)max_y;
-            differential_equations(&pos_x, &v_x, force_x, &max_x_f);
-            differential_equations(&pos_y, &v_y, force_y, &max_y_f);
+            differential_equations(&pos_x, &v_x, force_x, external_force_x, &max_x_f);
+            differential_equations(&pos_y, &v_y, force_y, external_force_y, &max_y_f);
 
             // Only print the positions when there is still velocity present.
             if(fabs(v_x) > FLOAT_TOLERANCE || fabs(v_y) > FLOAT_TOLERANCE)
             {
-                printf("Force (X,Y): %.2f,%.2f\n",force_x,force_y);
+                printf("Drone Force (X,Y): %.2f,%.2f\n",force_x,force_y);
+                printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
                 printf("X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
                 printf("Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
                 fflush(stdout);
@@ -180,9 +197,10 @@ int main()
 
 
 // Implementation of the Differential Equations function
-void differential_equations(double *position, double *velocity, double force, double *max_pos)
+void differential_equations(double *position, double *velocity, double force, double external_force double *max_pos)
 {
-    double acceleration_x = (force - DAMPING * (*velocity)) / MASS;
+    double total_force = force + external_force;
+    double acceleration_x = (total_force - DAMPING * (*velocity)) / MASS;
     *velocity = *velocity + acceleration_x * D_T;
     *position = *position + (*velocity) * D_T;
 
@@ -199,4 +217,69 @@ void step_method(int *x, int *y, int action_x, int action_y)
 
 
     //sprintf(shared_action, "%d,%d", 0, 0); // Zeros written on action memory
+}
+
+
+void calculate_extenal_force(double drone_x, double drone_y, double target_x, double target_y, double obstacle_x, double obstacle_y, double *external_force_x, double *external_force_y)
+{
+    // ***Calculate ATTRACTION force towards the target***
+    double distance_to_target = sqrt(pow(target_x - drone_x, 2) + pow(target_y - drone_y, 2));
+    double angle_to_target = atan2(target_y - drone_y, target_x - drone_x);
+
+    // To avoid division by zero or extremely high forces
+    if (distance_to_target < min_distance)
+    {
+        // Keep the force value as it were on the min_distance
+        distance_to_target = min_distance;
+    }
+    else if (distance_to_target < start_distance)
+    {
+        *external_force_x += coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * cos(angle_to_target);
+        *external_force_y += coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * sin(angle_to_target);
+    }
+    else
+    {
+        *external_force_x += 0;
+        *external_force_y += 0;
+    }
+    
+    // ***Calculate REPULSION force from the obstacle***
+    double distance_to_obstacle = sqrt(pow(obstacle_x - drone_x, 2) + pow(obstacle_y - drone_y, 2));
+    double angle_to_obstacle = atan2(obstacle_y - drone_y, obstacle_x - drone_x);
+
+    // To avoid division by zero or extremely high forces
+    if (distance_to_obstacle < min_distance)
+    {
+        // Keep the force value as it were on the min_distance
+        distance_to_obstacle = min_distance;
+    }
+    else if (distance_to_obstacle < start_distance)
+    {
+        external_force_x -= coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * cos(angle_to_obstacle);
+        external_force_y -= coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * sin(angle_to_obstacle);
+    }
+    else
+    {
+        *external_force_x -= 0;
+        *external_force_y -= 0;
+    }
+
+}
+
+void parse_obstacles_Msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
+{
+    int total_obstacles;
+    sscanf(obstacles_msg, "0[%d]", &total_obstacles);
+
+    char *token = strtok(obstacles_msg + 4, "|");
+    *number_obstacles = 0;
+
+    while (token != NULL && *number_obstacles < total_obstacles)
+    {
+        sscanf(token, "%d , %d", &obstacles[*number_obstacles].x, &obstacles[*number_obstacles].y);
+        obstacles[*number_obstacles].total = *number_obstacles + 1;
+
+        token = strtok(NULL, "|");
+        (*number_obstacles)++;
+    }
 }

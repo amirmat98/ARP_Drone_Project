@@ -42,6 +42,9 @@
 #define DAMPING 1 // Damping coefficient
 #define D_T 0.1 // Time interval in seconds
 #define F_MAX 30.0 // Maximal force that can be acted on the drone's motors
+const double coefficient = 400.0; // This was obtained by trial-error
+double min_distance = 2.0;
+double start_distance = 5.0; 
 
 #define THRESHOLD 50 // Threshold for counters
 

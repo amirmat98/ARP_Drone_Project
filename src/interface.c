@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
         sem_wait(sem_pos); // Wait for the semaphore to be signaled from drone.c process
         
         // OBSTACLES: Should be obtained from a pipe from server.c
-        char obstacles_msg[] = "O[7]35,11|30,5|16,30|38,7|30,40|53,15|2,10";
+        char obstacles_msg[] = "O[7]35,11|100,5|16,30|88,7|130,40|53,15|60,10";
         Obstacles obstacles[30];
         int number_obstacles;
         parse_obstacles_message(obstacles_msg, obstacles, &number_obstacles);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
         //draw_drone(drone_x, drone_y);
 
         // UPDATE THE TARGETS ONCE THE DRONE REACHES THE CURRENT LOWEST NUMBER 
-        int number_targets = sizeof (targets) / sizeof (targets[0]);
+        //int number_targets = sizeof (targets) / sizeof (targets[0]);
         // Find the index of the target with the lowest ID
         int lowest_index = find_lowest_ID(targets, number_targets);
         // Check if the coordinates of the lowest ID target match the drone coordinates
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
         handle_input(ptr_key, sem_key);
 
         sem_post(sem_key);    // unlocks to allow keyboard manager
-        usleep(10000);
+        // usleep(10000);
     }
 
     // Clean up and finish up resources taken by ncurses
