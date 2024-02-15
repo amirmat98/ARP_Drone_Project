@@ -19,18 +19,32 @@
 #define SHAREMEMORY_ACTION "/shared_control"
 #define SEMAPHORE_ACTION "/my_semaphore_3"
 
+// Shared memory key for LOGS
+#define SHAREMEMORY_LOGS "/shared_logs"
+#define SEMAPHORE_LOGS "/my_semaphore_4"
+
 // Pipes Constants
-# define MSG_LEN 80
+#define MSG_LEN 80
+
+// Length for logfiles
+#define LOG_LEN 256
 
 // Special value to indicate no key pressed
 #define NO_KEY_PRESSED 0
 
 
-// SYMBOLS FOR WATCHDOG
+// SYMBOLS FOR WATCHDOG & LOGGER
 #define SERVER_SYM 1
 #define WINDOW_SYM 2
 #define KM_SYM 3
 #define DRONE_SYM 4
+#define LOGGER_SYM 5
+#define WD_SYM 6
+
+// SYMBOLS FOR LOG TYPES
+#define INFO 1
+#define WARN 2
+#define ERROR 3
 
 #define SIZE_SHM 4096 // General size of Shared memory (in bytes)
 #define FLOAT_TOLERANCE 0.0044
