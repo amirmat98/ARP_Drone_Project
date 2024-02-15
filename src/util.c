@@ -48,3 +48,16 @@ void write_to_pipe(int pipe_des, char *message)
         exit(1);
     }
 }
+
+void log_msg(int who, int type, char *msg)
+{
+    int shm_logs = shm_open(SHAREMEMORY_LOGS, O_RDWR, 0666);
+    void *ptr_logs = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_logs, 0);
+
+     // unsure if it will work
+    sprintf(ptr_logs, "%i|%i|%s", who, type, msg);
+    // Detach from shared memorry
+    munmap(ptr_logs,SIZE_SHM);
+    close(shm_logs);
+
+}

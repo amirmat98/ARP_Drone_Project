@@ -18,12 +18,14 @@ pid_t window_pid;
 pid_t km_pid;
 pid_t drone_pid;
 pid_t wd_pid;
+pid_t logger_pid;
 
 // Variables for health monitoring
 int cnt_server;
 int cnt_window;
 int cnt_km;
 int cnt_drone;
+int cnt_logger;
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context)
 {
@@ -55,6 +57,11 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
             printf("Drone has sent SIGUSR2 \n\n");
             cnt_drone = 0;
         }
+        if (siginfo->si_pid == logger_pid)
+        {
+            printf("PID has sent SIGUSR2 \n\n");
+            cnt_logger = 0;
+        }
     }
 
  }
@@ -73,6 +80,7 @@ int main(int argc, char* argv[])
     window_pid = 0;
     km_pid = 0;
     drone_pid = 0;
+    logger_pid = 0;
     wd_pid = getpid();
 
     // Get pid of the processes
@@ -84,6 +92,7 @@ int main(int argc, char* argv[])
     cnt_window = 0;
     cnt_km = 0;
     cnt_drone = 0;
+    cnt_logger = 0;
 
     while(1)
     {
@@ -92,6 +101,7 @@ int main(int argc, char* argv[])
         cnt_window++;
         cnt_km++;
         cnt_drone++;
+        // cnt_logger++;
 
         /* Monitor health of all of the processes */
         kill(server_pid,SIGUSR1);
@@ -102,6 +112,7 @@ int main(int argc, char* argv[])
         usleep(500);
         kill(drone_pid, SIGUSR1);
         usleep(500);
+        kill(logger_pid, SIGUSR1);
 
 
         // If any of the processess does not respond in given timeframe, close them all
