@@ -127,6 +127,14 @@ int main()
             }
 
             // Calculate the EXTERNAL FORCE from obstacles and targets
+
+            // TARGETS
+            char targets_msg[] = "140,23";
+            double target_x, target_y;
+            sscanf(targets_msg, "%1f,%1f", &target_x, &target_y);
+            calculate_extenal_force(pos_x, pos_y, target_x, target_y, 0.0, 0.0, &external_force_x, &external_force_y);
+
+
             // OBSTACLES
             char obstacles_msg[] = "O[7]35,11|100,5|16,30|88,7|130,40|53,15|60,10";
             Obstacles obstacles[30];
@@ -147,7 +155,7 @@ int main()
             // Only print the positions when there is still velocity present.
             if(fabs(v_x) > FLOAT_TOLERANCE || fabs(v_y) > FLOAT_TOLERANCE)
             {
-                printf("Drone Force (X,Y): %.2f,%.2f\n",force_x,force_y);
+                printf("Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
                 printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
                 printf("X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
                 printf("Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
@@ -204,6 +212,7 @@ void differential_equations(double *position, double *velocity, double force, do
     *velocity = *velocity + acceleration_x * D_T;
     *position = *position + (*velocity) * D_T;
 
+    // Walls are the maximum position the drone can reach
     if (*position < 0) { *position = 0; }
     if (*position > *max_pos) { *position = *max_pos - 1; }
 

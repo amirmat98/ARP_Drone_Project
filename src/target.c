@@ -81,7 +81,7 @@ int main()
     // Print the generated targets in the specified format
     printf ("%s\n", target_msg);
 
-    sleep(1);
+    sleep(5);
 
     return 0;
 

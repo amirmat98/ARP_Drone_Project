@@ -107,6 +107,10 @@ int main(int argc, char *argv[])
     int number_targets;
     parse_target_message(targets_msg, targets, &number_targets);
 
+    // For game score calculation
+    int score = 0;
+    int counter = 0;
+
 
     while (1)
     {
@@ -131,15 +135,35 @@ int main(int argc, char *argv[])
         //int number_targets = sizeof (targets) / sizeof (targets[0]);
         // Find the index of the target with the lowest ID
         int lowest_index = find_lowest_ID(targets, number_targets);
+
+        // Obtain the coordinates of that target
+        char lowest_target[20];
+        sprintf(lowest_target, "%d , %d", targets[lowest_index].x, targets[lowest_index].y);
+
+
+
+
         // Check if the coordinates of the lowest ID target match the drone coordinates
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y)
         {
+            // Update score and counter (reset timer)
+            update_score(&counter, &score);
             remove_target(targets, &number_targets, lowest_index);
         }
 
+        // Check if the drone has crashed into an obstacle
+        if (check_collision_drone_obstacle(obstacles, number_obstacles, drone_x, drone_y))
+        {
+            // update score
+            score -= 5;
+        }
+
+        // Create a string for the player's current score
+        char score_msg[50];
+        sprintf(score_msg, "Your current scroe: %d", score);
 
         // Draws the window with the updated information of the terminal size, drone, targets and obstacles
-        draw_window(max_x, max_y, drone_x, drone_y, targets, number_targets, obstacles, number_obstacles);
+        draw_window(max_x, max_y, drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
 
         // Call the function that obtains the key that has been pressed.
         handle_input(ptr_key, sem_key);
@@ -191,7 +215,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 }
 
 void draw_window(int max_x, int max_y, int drone_x, int drone_y, Targets *targets, int number_targets, 
-                    Obstacles *obstacles, int number_obstacles)
+                    Obstacles *obstacles, int number_obstacles, const char *score_msg)
 {
     // Clear the screen
     clear();
@@ -202,12 +226,14 @@ void draw_window(int max_x, int max_y, int drone_x, int drone_y, Targets *target
 
     // Draw a rectangular border using the box function
     box(stdscr, 0, 0);
+    refresh();
 
     // Print a title in the top center part of the window
-    mvprintw(0, (new_max_x - 11) / 2, "Drone Control");
+    mvprintw(0, (max_x - 11) / 2, "%s", score_msg);
 
     // Draw a plus sign to represent the drone
     mvaddch(drone_x, drone_y, '+' | COLOR_PAIR(1));
+    refresh();
 
     // Draw obstacles on the board
     for (int i = 0; i < number_obstacles, i++)
@@ -215,6 +241,14 @@ void draw_window(int max_x, int max_y, int drone_x, int drone_y, Targets *target
         // Assuming 'O' represents obstacles
         mvaddch(obstacles[i].y, obstacles[i].x, '0');
     }
+    refresh();
+
+    // Draw targets on the board
+    for (int i = 0; i < number_targets; i++)
+    {
+        mvaddch(targets[i].y, targets[i].x, targets[i].ID + '0');
+    }
+    
 
     // Refresh the screen to apply changes
     refresh();
@@ -266,6 +300,7 @@ void remove_target(Targets *targets, int *number_targets, int index_to_remove)
     (*number_targets)--;
 
 }
+// Function to extract the coordinates from the obstacles_msg string into the struct Obstacles.
 void parse_obstacles_message(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
 {
     int total_obstacles;
@@ -284,6 +319,7 @@ void parse_obstacles_message(char *obstacles_msg, Obstacles *obstacles, int *num
     }
 }
 
+// Function to extract the coordinates from the targets_msg string into the struct Targets.
 void parse_target_message(char *targets_msg, Targets *targets, int *number_targets)
 {
     char *token = strtok(targets_msg + 4, "|");
@@ -297,4 +333,43 @@ void parse_target_message(char *targets_msg, Targets *targets, int *number_targe
         token = strtok(NULL, "|");
         (*number_targets)++;
     }
+}
+
+// Function to check if drone is at the same coordinates as any obstacle.
+int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles, int drone_x, int drone_y)
+{
+    for (int i = 0; i < number_obstacles; i++)
+    {
+        if (obstacles[i].x == drone_x && obstacles[i].y == drone_y)
+        {
+            return 1; // Drone is at the same coordinates as an obstacle
+        }
+    }
+    return 0; // Drone is not at the same coordinates as any obstacle
+}
+
+// Function called from the drone has reached the correct target.
+void update_score(int *score, int *counter)
+{
+    if (*counter > 400)
+    {
+        // 400 * 50ms = 20,000ms = 20 seconds 
+        *score += 2;
+    }
+    else if (*counter > 200)
+    {
+        // 200 * 50ms = 10,000ms = 10 seconds 
+        *score += 6;
+    }
+    else if (*counter > 100)
+    {
+        // 100 * 50ms = 5000ms = 5 seconds 
+        *score += 8;
+    }
+    else if (*counter <= 100)
+    {
+        // Les than 5 seconds
+        *score += 10;
+    }
+    *counter = 0;
 }
