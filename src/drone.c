@@ -255,7 +255,7 @@ int main()
 
 
 // Implementation of the Differential Equations function
-void differential_equations(double *position, double *velocity, double force, double external_force double *max_pos)
+void differential_equations(double *position, double *velocity, double force, double external_force, double *max_pos)
 {
     double total_force = force + external_force;
     double acceleration_x = (total_force - DAMPING * (*velocity)) / MASS;
