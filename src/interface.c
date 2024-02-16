@@ -11,79 +11,35 @@
 #include <sys/mman.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 
 #include <fcntl.h>
 #include <ncurses.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <errno.h>
 
-/* Global variables */
-// Attach to shared memory for key presses
-// int shm_key_fd;         // File descriptor for key shm
-int shm_pos_fd;         // File descriptor for drone pos shm
-// int *ptr_key;           // Shared memory for Key pressing
-char *ptr_pos;          // Shared memory for Drone Position
-// sem_t *sem_key;         // Semaphore for key presses
-sem_t *sem_pos;         // Semaphore for drone positions
 
-/*
-//WatchDog
-void signal_handler(int signo, siginfo_t *siginfo, void *context) 
-{
-    // printf(" Received signal number: %d \n", signo);
-    if( signo == SIGINT)
-    {
-        printf("Caught SIGINT \n");
-        // close all semaphores
-        sem_close(sem_key);
-        sem_close(sem_pos);
-
-        printf("Succesfully closed all semaphores\n");
-        sleep(10);
-        exit(1);
-    }
-    if (signo == SIGUSR1)
-    {
-        //TODO REFRESH SCREEN
-        // Get watchdog's pid
-        pid_t wd_pid = siginfo->si_pid;
-        // inform on your condition
-        kill(wd_pid, SIGUSR2);
-        // printf("SIGUSR2 SENT SUCCESSFULLY\n");
-    }
-}
-*/
-
-// Pipes
+// Serverless pipes
 int key_pressing[2];
 
 // Pipes working with the server
 int interface_server[2];
+int server_interface[2];
 
 int main(int argc, char *argv[])
 {
+    // Get the file descriptors for the pipes from the arguments
     get_args(argc, argv);
 
-
+    // Signals
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
     sa.sa_flags = SA_SIGINFO;
     sigaction (SIGINT, &sa, NULL);  
     sigaction (SIGUSR1, &sa, NULL);
-
     publish_pid_to_wd(WINDOW_SYM, getpid());
 
-    // Shared memory for KEY PRESSING
-    // shm_key_fd = shm_open(SHAREMEMORY_KEY, O_RDWR, 0666);
-    // ptr_key = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_key_fd, 0);
-
-
-    // Shared memory for DRONE POSITION
-    shm_pos_fd = shm_open(SHAREMEMORY_POSITION, O_RDWR, 0666);
-    ptr_pos = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_pos_fd, 0);
-
-    // sem_key = sem_open(SEMAPHORE_KEY, 0);
-    sem_pos = sem_open(SEMAPHORE_POSITION, 0);
     //----------------------------------------------------------------------------------------//
 
     /* INITIALIZATION AND EXECUTION OF NCURSES FUNCTIONS */
@@ -94,23 +50,22 @@ int main(int argc, char *argv[])
     init_pair(1, COLOR_BLUE, COLOR_BLACK); // Drone will be of color blue
     noecho(); // Disable echoing: no key character will be shown when pressed.
 
-    // Set the initial drone position (middle of the window)
-    int max_y, max_x;
-    getmaxyx(stdscr, max_y, max_x);
-    int drone_x = max_x / 2;
-    int drone_y = max_y / 2;
+    /* SET INITIAL DRONE POSITION */
+    // Obtain the screen dimensions
+    int screen_size_x;
+    int screen_size_y;
+    getmaxyx(stdscr, screen_size_y, screen_size_x);
+     // Initial drone position will be the middle of the screen.
+    int drone_x = screen_size_x / 2;
+    int drone_y = screen_size_y / 2;
 
-    // Write initial drone position in its corresponding shared memory
-    sprintf(ptr_pos, "%d,%d,%d,%d", drone_x, drone_y, max_x, max_y);
-
-
-    // Write the position data into a pipe to be read from (drone.c)
+    // Write the initial position and screen size data into the server
     char initial_msg[MSG_LEN];
-    sprintf(initial_msg, "123456789012345");
+    sprintf(initial_msg, "I1:%d,%d,%d,%d", drone_x, drone_y, screen_size_x, screen_size_y);
     write_to_pipe(interface_server[1], initial_msg);
 
 
-
+    /* OBTAIN TARGETS */
     // TARGETS: Should be obtained from a pipe from server.c
     char targets_msg[] = "T[8]140,23|105,5|62,4|38,6|50,16|6,25|89,34|149,11";
     Targets targets[30];
@@ -124,7 +79,6 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        sem_wait(sem_pos); // Wait for the semaphore to be signaled from drone.c process
         
         // OBSTACLES: Should be obtained from a pipe from server.c
         char obstacles_msg[] = "O[7]35,11|100,5|16,30|88,7|130,40|53,15|60,10";
@@ -133,16 +87,8 @@ int main(int argc, char *argv[])
         parse_obstacles_message(obstacles_msg, obstacles, &number_obstacles);
 
         
-        // Obtain the position values from shared memory
-        sscanf(ptr_pos, "%d,%d,%d,%d", &drone_x, &drone_y, &max_x, &max_y);
 
-        // Create the window
-        //create_window(max_x, max_y);
-        // Draw the drone on the screen based on the obtained positions.
-        //draw_drone(drone_x, drone_y);
-
-        // UPDATE THE TARGETS ONCE THE DRONE REACHES THE CURRENT LOWEST NUMBER 
-        //int number_targets = sizeof (targets) / sizeof (targets[0]);
+        /* UPDATE THE TARGETS ONCE THE DRONE REACHES THE CURRENT LOWEST NUMBER */
         // Find the index of the target with the lowest ID
         int lowest_index = find_lowest_ID(targets, number_targets);
 
@@ -179,9 +125,6 @@ int main(int argc, char *argv[])
             }
             counter = 0;
 
-
-
-
             remove_target(targets, &number_targets, lowest_index);
         }
 
@@ -199,11 +142,6 @@ int main(int argc, char *argv[])
         // Draws the window with the updated information of the terminal size, drone, targets and obstacles
         draw_window(drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
 
-        // Call the function that obtains the key that has been pressed.
-        // handle_input(ptr_key, sem_key);
-
-        // sem_post(sem_key);    // unlocks to allow keyboard manager
-
         /* HANDLE THE KEY PRESSED BY THE USER */
         int ch;
         if ((ch == getch()) != ERR)
@@ -211,36 +149,54 @@ int main(int argc, char *argv[])
             // Write char to the pipe
             char msg[MSG_LEN];
             sprintf(msg, "%c", ch);
+            // Send it directly to key_manager.c
             write_to_pipe(key_pressing[1], msg);
         }
-        flushinp(); // Clear the input buffer
+        // Clear the input buffer
+        flushinp();
+
+        /* READ the pipe from SERVER*/
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
+
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(server_interface[0], &read_fds);
+        
+        char server_msg[MSG_LEN];
+
+        int ready;
+        do
+        {
+            ready = select (server_interface[0] + 1, &read_fds, NULL, NULL, NULL);
+            if (ready == -1)
+            {
+                perror("Error in select");
+            }
+        } while (ready == -1 && errno == EINTR);
+
+        ssize_t bytes_read_drone = read(server_interface[0], server_msg, MSG_LEN);
+        if (bytes_read_drone > 0)
+        {
+            sscanf(server_msg, "D:%d, %d", &drone_x, &drone_y);
+        }
+        
 
         // Timer that is linked to score calculations, and ncurses window stability.
         counter++;
         usleep(50000);
-
-
-
-
-        // usleep(10000);
     }
 
     // Clean up and finish up resources taken by ncurses
     endwin(); 
-    // close shared memories
-    // close(shm_key_fd);
-    close(shm_pos_fd);
-
-    // Close and unlink the semaphore
-    // sem_close(sem_key);
-    sem_close(sem_pos);
 
     return 0;
 }
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &key_pressing[1], &interface_server[1]);
+    sscanf(argv[1], "%d %d %d", &key_pressing[1], &interface_server[1], &server_interface[0]);
 }
 
 
@@ -250,12 +206,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        // close all semaphores
-        // sem_close(sem_key);
-        sem_close(sem_pos);
-
-        printf("Succesfully closed all semaphores\n");
-        sleep(2);
+        // sleep(2);
         exit(1);
     }
     if (signo == SIGUSR1)
@@ -309,24 +260,6 @@ void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets,
     refresh();
 }
 
-
-/*
-void handle_input(int *shared_key, sem_t *semaphore)
-{
-    int temp_char;
-    if ((temp_char = getch()) != ERR)
-    {
-        // write char to the pipe
-        char msg[MSG_LEN];
-        sprintf(msg, "%c", temp_char);
-        write_to_pipe(key_pressing[1], msg);
-
-        // Store the pressed key in shared memory
-        *shared_key = temp_char;
-    }
-    flushinp(); // Clear the input buffer
-}
-*/
 
 // Function to find the index of the target with the lowest ID
 int find_lowest_ID(Targets *targets, int number_targets)
@@ -433,3 +366,22 @@ void update_score(int *score, int *counter)
     *counter = 0;
 }
 */
+
+int decypher_message(char server_msg[]) 
+{
+    if (server_msg[0] == 'D') 
+    {
+        return 1;
+    } 
+    else if (server_msg[0] == 'T') 
+    {
+        return 2;
+    } else if (server_msg[0] == 'O') 
+    {
+        return 3;
+    }
+    else 
+    {
+        return 0;
+    }
+}

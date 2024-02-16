@@ -20,19 +20,8 @@
 #include <errno.h>
 
 // Pipes working with the server
-// int action_des[2];
 int server_drone[2];
-
-/* Global variables */
-// Initialize shared memory for drone positions
-int shared_pos; // File descriptor for drone position shm
-char *shared_position; // Shared memory for Drone Position
-// Initialize shared memory for drone actions.
-// int shared_act; // File descriptor for actions shm
-// char *shared_action; // Shared memory for drone action 
-// Initialize semaphores
-sem_t *sem_pos; // semaphore for drone positions
-// sem_t *sem_action; // semaphore for drone action
+int drone_server[2];
 
 
 int main(int argc, char *argv[])
@@ -47,24 +36,14 @@ int main(int argc, char *argv[])
     sigaction (SIGUSR1, &sa, NULL);    
     publish_pid_to_wd(DRONE_SYM, getpid());
 
-    // Shared memory for DRONE POSITION
-    shared_pos = shm_open(SHAREMEMORY_POSITION, O_RDWR, 0666);
-    shared_position = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shared_pos, 0);
-    sem_pos = sem_open(SEMAPHORE_POSITION, 0);
-
-    // Shared memory for DRONE CONTROL - ACTION
-    // shared_act = shm_open(SHAREMEMORY_ACTION, O_RDWR, 0666);
-    // shared_action = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shared_act, 0);
-    // sem_action = sem_open(SEMAPHORE_ACTION, 0);
+    usleep(SLEEP_DRONE); // To let the interface.c process execute first and write the initial positions.
 
 
     //-----------------------------------------------------------------------------------------//
     // Variable declaration
-    usleep(SLEEP_DRONE);
     int x; int y;
-    int max_x; int max_y;
+    int screen_size_x; int screen_size_y;
     int action_x; int action_y;
-    sscanf(shared_position, "%d,%d,%d,%d", &x, &y, &max_x, &max_y); // Obtain the values of X,Y from shared memory
 
 
     // Variables for differential_equations
@@ -77,17 +56,14 @@ int main(int argc, char *argv[])
     double v_y = 0.0;    // Initial velocity of y
     double force_y = 0; // Applied force in the y direction
     double external_force_y = 0; // Initial external force
-
-    int counter = 0;
     
     bool euler_method_flag = true; // For testing purposes.
+
+    char server_msg[MSG_LEN];
 
     // Simulate the motion in an infinite loop using Differential Equations
     while (1)
     {
-        int x_i; int y_i;
-        // sscanf(shared_position, "%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
-        // sscanf(shared_action, "%d,%d", &action_x, &action_y);
 
         /*-----------------------------------------------------------*/
         /* READ the pipe from SERVER*/
@@ -102,8 +78,6 @@ int main(int argc, char *argv[])
 
         /*-------------------------------------------------------------*/
 
-        char server_msg[20];
-
         int ready = select (server_drone[0] + 1, &read_fds, NULL, NULL, &timeout);
         if (ready == -1)
         {
@@ -112,24 +86,26 @@ int main(int argc, char *argv[])
 
         if (ready > 0 && FD_ISSET(server_drone[0], &read_fds))
         {
-            char msg[MSG_LEN];
-            ssize_t bytes_read = read(server_drone[0], msg, sizeof(msg));
+            ssize_t bytes_read = read(server_drone[0], server_msg, MSG_LEN);
             if (bytes_read > 0)
             {
-                strncpy(server_msg, msg, sizeof(server_msg));
                 if(decypher_message(server_msg) == 1)
                 {
                     sscanf(server_msg, "K:%d,%d", &action_x, &action_y);
                 }
                 else if(decypher_message(server_msg) == 2)
                 {
-                    sscanf(server_msg, "I1:%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
+                    sscanf(server_msg, "I1:%d,%d,%d,%d", &x, &y, &screen_size_x, &screen_size_y);
                     printf("Obtained initial parameters from server: %s\n", server_msg);
+                    pos_x = (double)x;
+                    pos_y = (double)y;
+                    fflush(stdout);
                 }
                 else if(decypher_message(server_msg) == 3)
                 {
-                    sscanf(server_msg, "I2:%d,%d", &max_x, &max_y);
+                    sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
                     printf("Changed screen dimensions to: %s\n", server_msg);
+                    fflush(stdout);
                 }
             }
         }
@@ -138,16 +114,6 @@ int main(int argc, char *argv[])
             action_x = 0;
             action_y = 0;
         }
-
-        if(counter == 0)
-        {
-            pos_x = (double)x_i;
-            pos_y = (double)y_i;
-            counter++;
-        }
-            
-
-
 
         /*-----------------------------------------------------------*/
 
@@ -198,10 +164,10 @@ int main(int argc, char *argv[])
             }
 
             // Calling the function
-            double max_x_f = (double)max_x;
-            double max_y_f = (double)max_y;
-            differential_equations(&pos_x, &v_x, force_x, external_force_x, &max_x_f);
-            differential_equations(&pos_y, &v_y, force_y, external_force_y, &max_y_f);
+            double max_x = (double)screen_size_x;
+            double max_y = (double)screen_size_y;
+            differential_equations(&pos_x, &v_x, force_x, external_force_x, &max_x);
+            differential_equations(&pos_y, &v_y, force_y, external_force_y, &max_y);
 
             // Only print the positions when there is still velocity present.
             if(fabs(v_x) > FLOAT_TOLERANCE || fabs(v_y) > FLOAT_TOLERANCE)
@@ -212,13 +178,13 @@ int main(int argc, char *argv[])
                 printf("Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
                 fflush(stdout);
             }
-            // Write zeros on action memory
-            // sprintf(shared_action, "%d,%d", 0, 0);
-            // Write new drone position to shared memory
             int x_f = (int)round(pos_x);
             int y_f = (int)round(pos_y);
-            sprintf(shared_position, "%d,%d,%d,%d", x_f, y_f, max_x, max_y);
-            sem_post(sem_pos);
+
+            // Using pipes write this data so it can be read from (interface.c)
+            char position_msg[MSG_LEN];
+            sprintf(position_msg, "D:%d,%d", x_f, y_f);
+            write_to_pipe(drone_server[1], position_msg);
         }
 
         /* DRONE CONTROL WITH THE STEP METHOD*/
@@ -245,11 +211,6 @@ int main(int argc, char *argv[])
         // Introduce a delay on the loop to simulate real-time intervals.
         usleep(D_T * 1e6); 
     }
-    // Detach the shared memory segment
-    close(shared_pos);
-    // close(shared_act);
-    sem_close(sem_pos);
-    // sem_close(sem_action);
 
     return 0; 
 }
@@ -324,11 +285,14 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
         *external_force_y -= 0;
     }
 
+    /*
     // TO FIX A BUG WITH BIG FORCES APPEARING OUT OF NOWHERE
     if (*external_force_x > 50) {*external_force_x = 0;}
     if (*external_force_y > 50) {*external_force_y = 0;}
     if (*external_force_x < 50) {*external_force_x = 0;}
     if (*external_force_y < 50) {*external_force_y = 0;}
+    */
+
 
 }
 
@@ -375,7 +339,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d", &server_drone[0]);
+    sscanf(argv[1], "%d %d", &server_drone[0], &drone_server[1]);
 }
 
 int decypher_message(const char *server_msg) 

@@ -39,9 +39,9 @@ void publish_pid_to_wd(char process_symbol, pid_t pid)
     // When all is done unlink from shm
 }
 
-void write_to_pipe(int pipe_des, char *message)
+void write_to_pipe(int pipe_des, char message[])
 {
-    ssize_t bytes_written = write(pipe_des, message, sizeof(message));
+    ssize_t bytes_written = write(pipe_des, message, MSG_LEN);
     if (bytes_written == -1)
     {
         perror("Write went wrong");

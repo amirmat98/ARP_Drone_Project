@@ -13,6 +13,7 @@ int km_server[2];
 int server_drone[2];
 int interface_server[2];
 int drone_server[2];
+int server_interface[2];
 
 int main(int argc, char *argv[])
 {
@@ -42,6 +43,11 @@ int main(int argc, char *argv[])
         perror("pipe");
         exit(EXIT_FAILURE);
     }
+    if (pipe(drone_server) == -1)
+    {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
     if (pipe(km_server) == -1)
     {
         perror("pipe");
@@ -57,25 +63,27 @@ int main(int argc, char *argv[])
         perror("pipe");
         exit(EXIT_FAILURE);
     }
+    if (pipe(server_interface) == -1)
+    {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
 
     // Passing file descriptors for pipes used on key_manager.c
-    char key_manager_fds[10];
-    sprintf(key_manager_fds, "%d %d", key_pressing_des[0], key_pressing_des[1]);
+    char key_manager_fds[80];
+    sprintf(key_manager_fds, "%d %d", key_pressing_des[0], km_server[1]);
 
     // Passing file descriptors for pipes used on interface.c
-    char interface_fds[10];
-    sprintf(interface_fds, "%d", key_pressing_des[1]);
+    char interface_fds[80];
+    sprintf(interface_fds, "%d %d %d", key_pressing_des[1], interface_server[1], server_interface[1]);
 
     // Passing file descriptors for pipes used on drone.c
-    char drone_fds[10];
-    sprintf(drone_fds, "%d", server_drone[0]);
+    char drone_fds[80];
+    sprintf(drone_fds, "%d %d", server_drone[0], drone_server[1]);
 
     // Passing file descriptors for pipes used on server.c
-    char server_fds[10];
-    sprintf(server_fds, "%d %d", km_server[0], server_drone[1]);
-
-
-
+    char server_fds[80];
+    sprintf(server_fds, "%d %d %d %d %d", km_server[0], server_drone[1], interface_server[0], drone_server[0], server_interface[1]);
 
     int delay = 100000; // Time delay between next spawns
     int number_process = 0; //number of processes

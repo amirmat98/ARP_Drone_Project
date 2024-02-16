@@ -25,4 +25,6 @@ void update_score(int *score, int *counter);
 
 char* determine_action(int pressed_key, char *shared_action);
 
+int decypher_message(char server_msg[]);
+
 #endif //INTERFACE_H
