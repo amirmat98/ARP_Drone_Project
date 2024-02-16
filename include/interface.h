@@ -3,25 +3,11 @@
 
 #include <semaphore.h>
 #include <signal.h>
+#include "constants.h"
 
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context);
 void get_args(int argc, char *argv[]);
-
-
-struct Obstacles
-{
-    int total;
-    int x;
-    int y;
-};
-
-struct Targets
-{
-    int ID;
-    int x;
-    int y;
-};
 
 
 

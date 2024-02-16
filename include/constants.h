@@ -62,4 +62,29 @@ double start_distance = 5.0;
 
 #define THRESHOLD 50 // Threshold for counters
 
+
+
+// struct of obstacles
+struct Obstacles
+{
+    int total;
+    int x;
+    int y;
+};
+
+// struct of Targets
+struct Targets
+{
+    int ID;
+    int x;
+    int y;
+};
+
+
+
+
+
+
+
+
 #endif // CONSTANTS_H

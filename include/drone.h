@@ -1,12 +1,8 @@
 #ifndef DRONE_H
 #define DRONE_H
 
-struct Obstacles
-{
-    int total;
-    int x;
-    int y;
-};
+#include "constants.h"
+#include "signal.h"
 
 
 void differential_equations(double *position, double *velocity, double force, double external_force, double *max_pos);
