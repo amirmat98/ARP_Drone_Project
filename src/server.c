@@ -19,6 +19,7 @@
 // Pipes
 int km_server[2];
 int server_drone[2];
+int interface_server[2];
 
 // GLOBAL VARIABLES
 // Attach to shared memory for key presses
@@ -101,35 +102,43 @@ int main(int argc, char *argv[])
     // when all shm are created publish your pid to WD
     publish_pid_to_wd(SERVER_SYM, getpid());
 
+
+    // Timeout
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+
     //Main loop
     while(1)
     {
         /* Handle pipes for action (km -> server -> drone) */
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(km_server[0], &read_fds);
-        struct timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
+        fd_set read_km_server;
+        FD_ZERO(&read_km_server);
+        FD_SET(km_server[0], &read_km_server);
 
 
-        char action_msg[20];
 
-        int ready = select(km_server[0] + 1, &read_fds, NULL, NULL), &timeout;
-        if (ready == -1)
+        char action_msg[MSG_LEN];
+
+        int ready_km = select(km_server[0] + 1, &read_km_server, NULL, NULL), &timeout;
+        if (ready_km == -1)
         {
             perror("Error in select");
         }
-        if (ready > 0 && FD_ISSET(km_server[0], &read_fds)) 
+        if (ready_km > 0 && FD_ISSET(km_server[0], &read_km_server)) 
         {
-            char msg[MSG_LEN];
-            ssize_t bytes_read = read(km_server[0], msg, sizeof(msg));
-            if (bytes_read > 0) {
-                msg[bytes_read] = '\0';
-                strncpy(action_msg, msg, sizeof(action_msg));
+            // char msg[MSG_LEN];
+            ssize_t bytes_read = read(km_server[0], action_msg, sizeof(action_msg));
+            if (bytes_read > 0) 
+            {
                 printf("RECEIVED %s from key_manager.c\n", action_msg);
-                write_to_pipe(server_drone[1],action_msg);
-                printf("SENT %s to drone.c\n", action_msg);
+                fflush(stdout);
+                // Response
+                char response_action_msg[MSG_LEN*2];
+                sprintf(response_action_msg, "K:%s", action_msg);
+                write_to_pipe(server_drone[1], response_action_msg);
+                printf("SENT %s to drone.c\n", response_action_msg);
                 fflush(stdout);
             }
         }
@@ -137,10 +146,41 @@ int main(int argc, char *argv[])
         {
             sleep(0);
         }
-        
 
 
-        usleep(5 * SLEEP_DRONE); // Delay for testing purpose
+        fd_set read_interface_server;
+        FD_ZERO(&read_interface_server);
+        FD_SET(interface_server[0], &read_interface_server);
+
+        char initial_msg[MSG_LEN];
+
+        int ready_drone = select(interface_server[0] + 1, &read_interface_server, NULL, NULL, &timeout);
+        if (ready_drone == -1)
+        {
+            perror("Error in select");
+        }
+        if (ready_drone > 0 && FD_ISSET(interface_server[0], &read_interface_server))
+        {
+            ssize_t bytes_read = read(interface_server[0], initial_msg, sizeof(initial_msg));
+            if (bytes_read > 0)
+            {
+                printf("RECEIVED %s from interface.c\n", initial_msg);
+                fflush(stdout);
+                // Response
+                char response_initial_msg[MSG_LEN*2];
+                sprintf(response_initial_msg, "%s", initial_msg);
+                write_to_pipe(server_drone[1], response_initial_msg);
+                printf("SENT %s to drone.c\n", response_initial_msg);
+                fflush(stdout);
+            }
+            else
+            {
+                sleep(0);
+            }
+ 
+        }
+
+        usleep(10000); // Delay for testing purpose
     }
 
     // Close and unlink the semaphores
@@ -151,7 +191,7 @@ int main(int argc, char *argv[])
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &km_server[0], &server_drone[1]);
+    sscanf(argv[1], "%d %d %d", &km_server[0], &server_drone[1], &interface_server[0]);
 }
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 

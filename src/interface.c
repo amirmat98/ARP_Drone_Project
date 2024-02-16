@@ -57,6 +57,9 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 // Pipes
 int key_pressing[2];
 
+// Pipes working with the server
+int interface_server[2];
+
 int main(int argc, char *argv[])
 {
     get_args(argc, argv);
@@ -99,6 +102,13 @@ int main(int argc, char *argv[])
 
     // Write initial drone position in its corresponding shared memory
     sprintf(ptr_pos, "%d,%d,%d,%d", drone_x, drone_y, max_x, max_y);
+
+
+    // Write the position data into a pipe to be read from (drone.c)
+    char initial_msg[MSG_LEN];
+    sprintf(initial_msg, "123456789012345");
+    write_to_pipe(interface_server[1], initial_msg);
+
 
 
     // TARGETS: Should be obtained from a pipe from server.c
@@ -230,8 +240,10 @@ int main(int argc, char *argv[])
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d", &key_pressing[1]);
+    sscanf(argv[1], "%d %d", &key_pressing[1], &interface_server[1]);
 }
+
+
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
     // printf(" Received signal number: %d \n", signo);

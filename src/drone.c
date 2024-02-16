@@ -19,7 +19,7 @@
 #include <string.h>
 #include <errno.h>
 
-// Pipes
+// Pipes working with the server
 // int action_des[2];
 int server_drone[2];
 
@@ -68,15 +68,17 @@ int main(int argc, char *argv[])
 
 
     // Variables for differential_equations
-    double pos_x = (double)x;
+    double pos_x;
     double v_x = 0.0;    // Initial velocity of x
     double force_x = 0; // Applied force in the x direction
     double external_force_x = 0; // Initial external force
 
-    double pos_y = (double)y;
+    double pos_y;
     double v_y = 0.0;    // Initial velocity of y
     double force_y = 0; // Applied force in the y direction
     double external_force_y = 0; // Initial external force
+
+    int counter = 0;
     
     bool euler_method_flag = true; // For testing purposes.
 
@@ -84,10 +86,11 @@ int main(int argc, char *argv[])
     while (1)
     {
         int x_i; int y_i;
-        sscanf(shared_position, "%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
+        // sscanf(shared_position, "%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
         // sscanf(shared_action, "%d,%d", &action_x, &action_y);
 
         /*-----------------------------------------------------------*/
+        /* READ the pipe from SERVER*/
         
         fd_set = read_fds;
         FD_ZERO(&read_fds);
@@ -97,7 +100,9 @@ int main(int argc, char *argv[])
         timeout.tv_sec = 0;
         timeout.tv_usec = 0;
 
-        char action_msg[20];
+        /*-------------------------------------------------------------*/
+
+        char server_msg[20];
 
         int ready = select (server_drone[0] + 1, &read_fds, NULL, NULL, &timeout);
         if (ready == -1)
@@ -111,22 +116,36 @@ int main(int argc, char *argv[])
             ssize_t bytes_read = read(server_drone[0], msg, sizeof(msg));
             if (bytes_read > 0)
             {
-                // Null-terminate the received data to make it a valid string
-                msg[bytes_read] = '\0';
-                // Copy the received data to action_msg
-                strncpy(action_msg, msg, sizeof(action_msg));
-                // Print the received string
-                // printf("Received ACTION from pipe: %s\n", action_msg);
-                sscanf(action_msg, "%d, %d", &action_x, &action_y);
-                fflush(stdout);
+                strncpy(server_msg, msg, sizeof(server_msg));
+                if(decypher_message(server_msg) == 1)
+                {
+                    sscanf(server_msg, "K:%d,%d", &action_x, &action_y);
+                }
+                else if(decypher_message(server_msg) == 2)
+                {
+                    sscanf(server_msg, "I1:%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
+                    printf("Obtained initial parameters from server: %s\n", server_msg);
+                }
+                else if(decypher_message(server_msg) == 3)
+                {
+                    sscanf(server_msg, "I2:%d,%d", &max_x, &max_y);
+                    printf("Changed screen dimensions to: %s\n", server_msg);
+                }
             }
-            else
-            {
-                action_x = 0;
-                action_y = 0;
-            }
-            
         }
+        else
+        {
+            action_x = 0;
+            action_y = 0;
+        }
+
+        if(counter == 0)
+        {
+            pos_x = (double)x_i;
+            pos_y = (double)y_i;
+            counter++;
+        }
+            
 
 
 
@@ -357,4 +376,24 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 void get_args(int argc, char *argv[])
 {
     sscanf(argv[1], "%d", &server_drone[0]);
+}
+
+int decypher_message(const char *server_msg) 
+{
+    if (server_msg[0] == 'K') 
+    {
+        return 1;
+    } 
+    else if (server_msg[0] == 'I' && server_msg[1] == '1') 
+    {
+        return 2;
+    } 
+    else if (server_msg[0] == 'I' && server_msg[1] == '2') 
+    {
+        return 3;
+    }
+    else 
+    {
+        return 0;
+    }
 }

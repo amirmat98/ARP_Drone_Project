@@ -49,7 +49,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 }
 */
 
-// Pipes
+// Pipes working with the server
 int key_pressing[2];
 int km_server[2];
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
          /*THIS SECTION IS FOR DRONE ACTION DECISION*/
 
          char *action = determine_action(pressed_key, ptr_action);
-         printf("Action sent to drone: %s\n\n", action);
+         // printf("Action sent to drone: %s\n\n", action);
          fflush(stdout);
 
          // TEMPORAL/DELETE AFTER: TESTING DATA SENT TO PIPE ACTION
