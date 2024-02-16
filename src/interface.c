@@ -19,11 +19,11 @@
 
 /* Global variables */
 // Attach to shared memory for key presses
-int shm_key_fd;         // File descriptor for key shm
+// int shm_key_fd;         // File descriptor for key shm
 int shm_pos_fd;         // File descriptor for drone pos shm
-int *ptr_key;           // Shared memory for Key pressing
+// int *ptr_key;           // Shared memory for Key pressing
 char *ptr_pos;          // Shared memory for Drone Position
-sem_t *sem_key;         // Semaphore for key presses
+// sem_t *sem_key;         // Semaphore for key presses
 sem_t *sem_pos;         // Semaphore for drone positions
 
 /*
@@ -71,15 +71,15 @@ int main(int argc, char *argv[])
     publish_pid_to_wd(WINDOW_SYM, getpid());
 
     // Shared memory for KEY PRESSING
-    shm_key_fd = shm_open(SHAREMEMORY_KEY, O_RDWR, 0666);
-    ptr_key = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_key_fd, 0);
+    // shm_key_fd = shm_open(SHAREMEMORY_KEY, O_RDWR, 0666);
+    // ptr_key = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_key_fd, 0);
 
 
     // Shared memory for DRONE POSITION
     shm_pos_fd = shm_open(SHAREMEMORY_POSITION, O_RDWR, 0666);
     ptr_pos = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_pos_fd, 0);
 
-    sem_key = sem_open(SEMAPHORE_KEY, 0);
+    // sem_key = sem_open(SEMAPHORE_KEY, 0);
     sem_pos = sem_open(SEMAPHORE_POSITION, 0);
     //----------------------------------------------------------------------------------------//
 
@@ -147,7 +147,31 @@ int main(int argc, char *argv[])
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y)
         {
             // Update score and counter (reset timer)
-            update_score(&counter, &score);
+            // update_score(&counter, &score);
+
+
+
+            if (counter > 400) 
+            {  // 400 * 50ms = 20,000ms = 20 seconds 
+                score += 2;
+            }
+            else if (counter > 200) 
+            {  // 200 * 50ms = 10,000ms = 10 seconds 
+                score += 6;
+            }
+            else if (counter > 100) 
+            {  // 100 * 50ms = 5000ms = 5 seconds 
+                score += 8;
+            }
+            else 
+            {  // Les than 5 seconds
+                score += 10;
+            }
+            counter = 0;
+
+
+
+
             remove_target(targets, &number_targets, lowest_index);
         }
 
@@ -163,23 +187,42 @@ int main(int argc, char *argv[])
         sprintf(score_msg, "Your current scroe: %d", score);
 
         // Draws the window with the updated information of the terminal size, drone, targets and obstacles
-        draw_window(max_x, max_y, drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
+        draw_window(drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
 
         // Call the function that obtains the key that has been pressed.
-        handle_input(ptr_key, sem_key);
+        // handle_input(ptr_key, sem_key);
 
-        sem_post(sem_key);    // unlocks to allow keyboard manager
+        // sem_post(sem_key);    // unlocks to allow keyboard manager
+
+        /* HANDLE THE KEY PRESSED BY THE USER */
+        int ch;
+        if ((ch == getch()) != ERR)
+        {
+            // Write char to the pipe
+            char msg[MSG_LEN];
+            sprintf(msg, "%c", ch);
+            write_to_pipe(key_pressing[1], msg);
+        }
+        flushinp(); // Clear the input buffer
+
+        // Timer that is linked to score calculations, and ncurses window stability.
+        counter++;
+        usleep(50000);
+
+
+
+
         // usleep(10000);
     }
 
     // Clean up and finish up resources taken by ncurses
     endwin(); 
     // close shared memories
-    close(shm_key_fd);
+    // close(shm_key_fd);
     close(shm_pos_fd);
 
     // Close and unlink the semaphore
-    sem_close(sem_key);
+    // sem_close(sem_key);
     sem_close(sem_pos);
 
     return 0;
@@ -196,7 +239,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     {
         printf("Caught SIGINT \n");
         // close all semaphores
-        sem_close(sem_key);
+        // sem_close(sem_key);
         sem_close(sem_pos);
 
         printf("Succesfully closed all semaphores\n");
@@ -214,15 +257,15 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     }
 }
 
-void draw_window(int max_x, int max_y, int drone_x, int drone_y, Targets *targets, int number_targets, 
+void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets, 
                     Obstacles *obstacles, int number_obstacles, const char *score_msg)
 {
     // Clear the screen
     clear();
 
     // Get the dimensions of the terminal window
-    int new_max_x, new_max_y;
-    getmaxyx(stdscr, new_max_y, new_max_x);
+    int max_x, max_y;
+    getmaxyx(stdscr, max_y, max_x);
 
     // Draw a rectangular border using the box function
     box(stdscr, 0, 0);
@@ -255,6 +298,7 @@ void draw_window(int max_x, int max_y, int drone_x, int drone_y, Targets *target
 }
 
 
+/*
 void handle_input(int *shared_key, sem_t *semaphore)
 {
     int temp_char;
@@ -270,6 +314,7 @@ void handle_input(int *shared_key, sem_t *semaphore)
     }
     flushinp(); // Clear the input buffer
 }
+*/
 
 // Function to find the index of the target with the lowest ID
 int find_lowest_ID(Targets *targets, int number_targets)
@@ -348,6 +393,8 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
     return 0; // Drone is not at the same coordinates as any obstacle
 }
 
+
+/*
 // Function called from the drone has reached the correct target.
 void update_score(int *score, int *counter)
 {
@@ -373,3 +420,4 @@ void update_score(int *score, int *counter)
     }
     *counter = 0;
 }
+*/

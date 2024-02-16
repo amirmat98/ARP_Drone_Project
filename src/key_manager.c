@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/select.h>
@@ -13,6 +14,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <semaphore.h>
+#include <errno.h>
 
 // GLOBAL VARIABLES
 int shared_key;
@@ -49,6 +51,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 // Pipes
 int key_pressing[2];
+int action_des[2];
 
 int main(int argc, char *argv[])
 {
@@ -78,23 +81,48 @@ int main(int argc, char *argv[])
  
     while(1)
     {
-        /*THIS SECTION IS FOR OBTAINING KEY INPUT*/
+        /*THIS SECTION IS FOR OBTAINING THE KEY INPUT CHARACTER*/
 
-        sem_wait(sem_key);  // Wait for the semaphore to be signaled from interface.c process
-        //int pressed_key = *(int*)ptr_key;    // Read the pressed key from shared memory 
-        int pressed_key = read_key_from_pipe(key_pressing[0]);
-        printf("Pressed key: %c\n", (char)pressed_key);
-        fflush(stdout);
+        fd_set readset_km;
+        // Initializes the file descriptor set readset by clearing all file descriptors from it.
+        FD_ZERO(&readset_km);
+        // Adds key_pressing to the file descriptor set readset.
+        FD_SET(key_pressing[0], &readset_km);
 
-        /*THIS SECTION IS FOR DRONE ACTION DECISION*/
+        int ready;
+         // This waits until a key press is sent from (interface.c)
+         do
+         {
+            ready = select(key_pressing[0] + 1, &readset_km, NULL, NULL, NULL);
+         } while (ready == -1 && errno == EINTR);
 
-        char *action = determine_action(pressed_key, ptr_action);
-        printf("Action sent to drone: %s\n\n", action);
-        fflush(stdout);
+         // Read from the file descriptor
+         int pressed_key = read_key_from_pipe(key_pressing[0]);
+         printf("Pressed key: %c\n", (char)pressed_key);
+         fflush(stdout);
 
-        // Clear memory after processing the key
-        *(int*)ptr_key = 0;
+         /*THIS SECTION IS FOR DRONE ACTION DECISION*/
+
+         char *action = determine_action(pressed_key, ptr_action);
+         printf("Action sent to drone: %s\n\n", action);
+         fflush(stdout);
+
+         // TEMPORAL/DELETE AFTER: TESTING DATA SENT TO PIPE ACTION
+         char key = toupper(pressed_key);
+         int x; int y;
+         char action_msg[20];
+
+         if ( key == 'D')
+         {
+            x = 1;    // Movement on the X axis.
+            y = 0;    // Movement on the Y axis.
+            sprintf(action_msg, "%d,%d", x, y);
+            write_to_pipe (action_des[1], action_msg);
+            printf("Wrote action message: %s into pipe\n", action_msg);
+         }        
     }
+
+    // DELETE: Everything related to shared memory and semaphores
 
     // close shared memories
     close(shared_key);
@@ -115,7 +143,7 @@ int read_key_from_pipe (int pipe_des)
 
     ssize_t bytes_read = read(pipe_des, msg, sizeof(msg));
 
-    printf("succesfully read from window\n");
+    // printf("succesfully read from window\n");
     int pressed_key = msg[0];
     return pressed_key;
 }
@@ -155,6 +183,7 @@ char* determine_action(int pressed_key, char *shared_action)
 {
     char key = toupper(pressed_key);
     int x; int y;
+    char action_msg[20];
 
     // Disclaimer: Y axis is inverted on tested terminal.
     if ( key == 'W')
@@ -162,6 +191,8 @@ char* determine_action(int pressed_key, char *shared_action)
         x = 0;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
+        sprintf(action_msg, "%d, %d", x, y);
+        write_to_pipe(action_des[1], action_msg);
         return "UP";
     }
     if ( key == 'S')

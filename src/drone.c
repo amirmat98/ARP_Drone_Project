@@ -10,10 +10,17 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
+#include <sys/select.h>
+#include <sys/stat.h>
+
 #include <semaphore.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
+#include <errno.h>
+
+// Pipes
+int action_des[2];
 
 /* Global variables */
 // Initialize shared memory for drone positions
@@ -99,6 +106,49 @@ int main()
         int x_i; int y_i;
         sscanf(shared_position, "%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
         sscanf(shared_action, "%d,%d", &action_x, &action_y);
+
+        /*-----------------------------------------------------------*/
+        
+        fd_set = read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(action_des[0], &read_fds);
+
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
+
+        char action_msg[20];
+
+        int ready = select (action_des[0] + 1, &read_fds, NULL, NULL, &timeout);
+        if (ready == -1)
+        {
+            perror("Error in select");
+        }
+
+        if (ready > 0 && FD_ISSET(action_des[0], &read_fds))
+        {
+            char msg[MSG_LEN];
+            ssize_t bytes_read = read(action_des[0], msg, sizeof(msg));
+            if (bytes_read > 0)
+            {
+                // Null-terminate the received data to make it a valid string
+                msg[bytes_read] = '\0';
+                                // Copy the received data to action_msg
+                strncpy(action_msg, msg, sizeof(action_msg));
+                // Print the received string
+                printf("Received ACTION from pipe: %s\n", action_msg);
+                fflush(stdout);
+            }
+            else
+            {
+                printf("No data available to be read from the pipe.\n");
+            }
+            
+        }
+
+
+
+        /*-----------------------------------------------------------*/
 
 
         /* DRONE CONTROL WITH THE DYNAMICS FORMULA*/
@@ -272,6 +322,12 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
         *external_force_x -= 0;
         *external_force_y -= 0;
     }
+
+    // TO FIX A BUG WITH BIG FORCES APPEARING OUT OF NOWHERE
+    if (*external_force_x > 50) {*external_force_x = 0;}
+    if (*external_force_y > 50) {*external_force_y = 0;}
+    if (*external_force_x < 50) {*external_force_x = 0;}
+    if (*external_force_y < 50) {*external_force_y = 0;}
 
 }
 

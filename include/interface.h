@@ -25,8 +25,8 @@ struct Targets
 
 
 
-void draw_window(int max_x, int max_y, int drone_x, int drone_y, Targets *targets, int number_targets, Obstacles *obstacles, int number_obstacles, const char *score_msg);
-void handle_input(int *shared_key, sem_t *semaphore);
+void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets, Obstacles *obstacles, int number_obstacles, const char *score_msg);
+// void handle_input(int *shared_key, sem_t *semaphore);
 
 
 int find_lowest_ID(Targets *targets, int number_targets);
