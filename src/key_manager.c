@@ -51,7 +51,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 // Pipes
 int key_pressing[2];
-int action_des[2];
+int km_server[2];
 
 int main(int argc, char *argv[])
 {
@@ -110,15 +110,12 @@ int main(int argc, char *argv[])
          // TEMPORAL/DELETE AFTER: TESTING DATA SENT TO PIPE ACTION
          char key = toupper(pressed_key);
          int x; int y;
-         char action_msg[20];
+         // char action_msg[20];
 
-         if ( key == 'D')
+         if ( action != "None")
          {
-            x = 1;    // Movement on the X axis.
-            y = 0;    // Movement on the Y axis.
-            sprintf(action_msg, "%d,%d", x, y);
-            write_to_pipe (action_des[1], action_msg);
-            printf("Wrote action message: %s into pipe\n", action_msg);
+            write_to_pipe (km_server[1], action);
+            printf("Wrote action message: %s into pipe\n", action);
          }        
     }
 
@@ -150,7 +147,7 @@ int read_key_from_pipe (int pipe_des)
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &key_pressing[0], &key_pressing[1]);
+    sscanf(argv[1], "%d %d", &key_pressing[0], &km_server[1]);
 }
 
 
@@ -183,7 +180,7 @@ char* determine_action(int pressed_key, char *shared_action)
 {
     char key = toupper(pressed_key);
     int x; int y;
-    char action_msg[20];
+    // char action_msg[20];
 
     // Disclaimer: Y axis is inverted on tested terminal.
     if ( key == 'W')
@@ -191,65 +188,74 @@ char* determine_action(int pressed_key, char *shared_action)
         x = 0;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        sprintf(action_msg, "%d, %d", x, y);
-        write_to_pipe(action_des[1], action_msg);
-        return "UP";
+        // sprintf(action_msg, "%d, %d", x, y);
+        // write_to_pipe(action_des[1], action_msg);
+        // return "UP";
+        return "0,-1";
     }
     if ( key == 'S')
     {
         x = 0;    // Movement on the X axis.
         y = 1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "DOWN";
+        // return "DOWN";
+        return "0,1";
     }
     if ( key == 'A')
     {
         x = -1;    // Movement on the X axis.
         y = 0;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "LEFT";
+        // return "LEFT";
+        return "-1,0";
     }
     if ( key == 'D')
     {
         x = 1;    // Movement on the X axis.
         y = 0;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "RIGHT";
+        // return "RIGHT";
+        return "1,0";
     }
     if ( key == 'Q')
     {
         x = -1;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "UP-LEFT";
+        // return "UP-LEFT";
+        return "-1,-1";
     }
     if ( key == 'E')
     {
         x = 1;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "UP-RIGHT";
+        // return "UP-RIGHT";
+        return "1,-1";
     }
     if ( key == 'Z')
     {
         x = -1;    // Movement on the X axis.
         y = 1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "DOWN-LEFT";
+        // return "DOWN-LEFT";
+        return "-1,1";
     }
     if ( key == 'C')
     {
         x = 1;    // Movement on the X axis.
         y = 1;    // Movement on the Y axis.
         sprintf(shared_action, "%d,%d", x, y);
-        return "DOWN-RIGHT";
+        // return "DOWN-RIGHT";
+        return "1,1";
     }
     if ( key == 'R')
     {
         x = 900;    // Special value interpreted by drone.c process
         y = 0;
         sprintf(shared_action, "%d,%d", x, y);
-        return "STOP";
+        // return "STOP";
+        return "900,0";
     }
     else
     {

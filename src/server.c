@@ -8,9 +8,17 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+
+
+// Pipes
+int km_server[2];
+int server_drone[2];
 
 // GLOBAL VARIABLES
 // Attach to shared memory for key presses
@@ -29,8 +37,11 @@ sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
 
 
 
-int main()
+int main(int argc, char *argv[])
 {
+    
+    get_args(argc, argv);
+
     /* Sigaction */
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
@@ -93,6 +104,42 @@ int main()
     //Main loop
     while(1)
     {
+        /* Handle pipes for action (km -> server -> drone) */
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(km_server[0], &read_fds);
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
+
+
+        char action_msg[20];
+
+        int ready = select(km_server[0] + 1, &read_fds, NULL, NULL), &timeout;
+        if (ready == -1)
+        {
+            perror("Error in select");
+        }
+        if (ready > 0 && FD_ISSET(km_server[0], &read_fds)) 
+        {
+            char msg[MSG_LEN];
+            ssize_t bytes_read = read(km_server[0], msg, sizeof(msg));
+            if (bytes_read > 0) {
+                msg[bytes_read] = '\0';
+                strncpy(action_msg, msg, sizeof(action_msg));
+                printf("RECEIVED %s from key_manager.c\n", action_msg);
+                write_to_pipe(server_drone[1],action_msg);
+                printf("SENT %s to drone.c\n", action_msg);
+                fflush(stdout);
+            }
+        }
+        else
+        {
+            sleep(0);
+        }
+        
+
+
         usleep(5 * SLEEP_DRONE); // Delay for testing purpose
     }
 
@@ -102,6 +149,10 @@ int main()
 
 }
 
+void get_args(int argc, char *argv[])
+{
+    sscanf(argv[1], "%d %d", &km_server[0], &server_drone[1]);
+}
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {

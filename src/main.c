@@ -9,9 +9,8 @@
 
 // Pipes file descriptors
 int key_pressing_des[2];
-int action_des[2];
-int targets_des[2];
-int obstacles_des[2];
+int km_server[2];
+int server_drone[2];
 
 int main(int argc, char *argv[])
 {
@@ -41,43 +40,33 @@ int main(int argc, char *argv[])
         perror("pipe");
         exit(EXIT_FAILURE);
     }
-    if (pipe(action_des) == -1)
+    if (pipe(km_server) == -1)
     {
         perror("pipe");
         exit(EXIT_FAILURE);
     }
-    if (pipe(targets_des) == -1)
-    {
-        perror("pipe");
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(obstacles_des) == -1)
+    if (pipe(server_drone) == -1)
     {
         perror("pipe");
         exit(EXIT_FAILURE);
     }
 
     // Passing file descriptors for pipes used on key_manager.c
-    char key_manager_fds1[40];
-    char key_manager_fds2[40];
-    sprintf(key_manager_fds1, "%d %d", key_pressing_des[0], key_pressing_des[1]);
-    sprintf(key_manager_fds2, "%d %d", action_des[0], action_des[1]);
+    char key_manager_fds[80];
+    sprintf(key_manager_fds, "%d %d", key_pressing_des[0], key_pressing_des[1]);
 
     // Passing file descriptors for pipes used on interface.c
-    char window_fds[40];
-    sprintf(window_fds, "%d %d", key_pressing_des[0], key_pressing_des[1]);
+    char interface_fds[80];
+    sprintf(interface_fds, "%d", key_pressing_des[1]);
 
     // Passing file descriptors for pipes used on drone.c
-    char drone_fds[40];
-    sprintf(drone_fds, "%d %d", action_des[0], action_des[1]);
+    char drone_fds[80];
+    sprintf(drone_fds, "%d", server_drone[0]);
 
-    // Passing file descriptors for pipes used on targets.c
-    char targets_fds[40];
-    sprintf(targets_fds, "%d %d", targets_des[0], targets_des[1]);
+    // Passing file descriptors for pipes used on server.c
+    char server_fds[80];
+    sprintf(server_fds, "%d %d", km_server[0], server_drone[1]);
 
-    // Passing file descriptors for pipes used on targets.c
-    char obstacles_fds[40];
-    sprintf(obstacles_fds, "%d %d", obstacles_des[0], obstacles_des[1]);
 
 
 
@@ -85,7 +74,7 @@ int main(int argc, char *argv[])
     int number_process = 0; //number of processes
 
     /* Server  */
-    char* server_args[] = {"konsole", "-e", "./build/server", NULL};
+    char* server_args[] = {"konsole", "-e", "./build/server", server_fds, NULL};
     server_pid = create_child(server_args[0], server_args);
     number_process++;
     usleep(delay*10); // little bit more time for server
@@ -98,13 +87,13 @@ int main(int argc, char *argv[])
     // usleep(delay);
 
     /* Targets */
-    char* targets_args[] = {"konsole", "-e", "./build/key_manager", targets_fds, NULL};
+    char* targets_args[] = {"konsole", "-e", "./build/key_manager", NULL};
     targets_pid = create_child(targets_args[0], targets_args);
     number_process++;
     usleep(delay);
 
     /* Obstacles */
-    char* obstacles_args[] = {"konsole", "-e", "./build/key_manager", obstacles_fds, NULL};
+    char* obstacles_args[] = {"konsole", "-e", "./build/key_manager", NULL};
     obstacles_pid = create_child(obstacles_args[0], obstacles_args);
     number_process++;
     usleep(delay);
@@ -114,7 +103,7 @@ int main(int argc, char *argv[])
 
 
     /* Keyboard manager */
-    char* km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_fds1, key_manager_fds2, NULL};
+    char* km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_fds, NULL};
     km_pid = create_child(km_args[0], km_args);
     number_process++;
     usleep(delay);
@@ -134,7 +123,7 @@ int main(int argc, char *argv[])
 
     /* Window - Interface */
     char* window_args[] = {"konsole", "-e", "./build/interface", window_des, NULL};
-    window_pid = create_child(window_args[0], window_args);
+    window_pid = create_child(window_args[0], interface_fds);
     number_process++;
     usleep(delay);
 

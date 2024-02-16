@@ -20,45 +20,25 @@
 #include <errno.h>
 
 // Pipes
-int action_des[2];
+// int action_des[2];
+int server_drone[2];
 
 /* Global variables */
 // Initialize shared memory for drone positions
 int shared_pos; // File descriptor for drone position shm
 char *shared_position; // Shared memory for Drone Position
 // Initialize shared memory for drone actions.
-int shared_act; // File descriptor for actions shm
-char *shared_action; // Shared memory for drone action 
+// int shared_act; // File descriptor for actions shm
+// char *shared_action; // Shared memory for drone action 
 // Initialize semaphores
 sem_t *sem_pos; // semaphore for drone positions
-sem_t *sem_action; // semaphore for drone action
+// sem_t *sem_action; // semaphore for drone action
 
 
-// Watchdog Function
-void signal_handler(int signo, siginfo_t *siginfo, void *context) 
+int main(int argc, char *argv[])
 {
-    printf("Received signal number: %d \n", signo);
-    if( signo == SIGINT)
-    {
-        printf("Caught SIGINT \n");
-        // close all semaphores
-        sem_close(sem_action);
+    get_args(argc, argv);
 
-        printf("Succesfully closed all semaphores\n");
-        exit(1);
-    }
-    if (signo == SIGUSR1)
-    {
-        // Get watchdog's pid
-        pid_t wd_pid = siginfo->si_pid;
-        // inform on your condition
-        kill(wd_pid, SIGUSR2);
-        // printf("SIGUSR2 SENT SUCCESSFULLY\n");
-    }
-}
-
-int main()
-{
     // Watchdog Variables
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
@@ -73,9 +53,9 @@ int main()
     sem_pos = sem_open(SEMAPHORE_POSITION, 0);
 
     // Shared memory for DRONE CONTROL - ACTION
-    shared_act = shm_open(SHAREMEMORY_ACTION, O_RDWR, 0666);
-    shared_action = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shared_act, 0);
-    sem_action = sem_open(SEMAPHORE_ACTION, 0);
+    // shared_act = shm_open(SHAREMEMORY_ACTION, O_RDWR, 0666);
+    // shared_action = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shared_act, 0);
+    // sem_action = sem_open(SEMAPHORE_ACTION, 0);
 
 
     //-----------------------------------------------------------------------------------------//
@@ -105,13 +85,13 @@ int main()
     {
         int x_i; int y_i;
         sscanf(shared_position, "%d,%d,%d,%d", &x_i, &y_i, &max_x, &max_y);
-        sscanf(shared_action, "%d,%d", &action_x, &action_y);
+        // sscanf(shared_action, "%d,%d", &action_x, &action_y);
 
         /*-----------------------------------------------------------*/
         
         fd_set = read_fds;
         FD_ZERO(&read_fds);
-        FD_SET(action_des[0], &read_fds);
+        FD_SET(server_drone[0], &read_fds);
 
         struct timeval timeout;
         timeout.tv_sec = 0;
@@ -119,29 +99,31 @@ int main()
 
         char action_msg[20];
 
-        int ready = select (action_des[0] + 1, &read_fds, NULL, NULL, &timeout);
+        int ready = select (server_drone[0] + 1, &read_fds, NULL, NULL, &timeout);
         if (ready == -1)
         {
             perror("Error in select");
         }
 
-        if (ready > 0 && FD_ISSET(action_des[0], &read_fds))
+        if (ready > 0 && FD_ISSET(server_drone[0], &read_fds))
         {
             char msg[MSG_LEN];
-            ssize_t bytes_read = read(action_des[0], msg, sizeof(msg));
+            ssize_t bytes_read = read(server_drone[0], msg, sizeof(msg));
             if (bytes_read > 0)
             {
                 // Null-terminate the received data to make it a valid string
                 msg[bytes_read] = '\0';
-                                // Copy the received data to action_msg
+                // Copy the received data to action_msg
                 strncpy(action_msg, msg, sizeof(action_msg));
                 // Print the received string
-                printf("Received ACTION from pipe: %s\n", action_msg);
+                // printf("Received ACTION from pipe: %s\n", action_msg);
+                sscanf(action_msg, "%d, %d", &action_x, &action_y);
                 fflush(stdout);
             }
             else
             {
-                printf("No data available to be read from the pipe.\n");
+                action_x = 0;
+                action_y = 0;
             }
             
         }
@@ -212,7 +194,7 @@ int main()
                 fflush(stdout);
             }
             // Write zeros on action memory
-            sprintf(shared_action, "%d,%d", 0, 0);
+            // sprintf(shared_action, "%d,%d", 0, 0);
             // Write new drone position to shared memory
             int x_f = (int)round(pos_x);
             int y_f = (int)round(pos_y);
@@ -246,9 +228,9 @@ int main()
     }
     // Detach the shared memory segment
     close(shared_pos);
-    close(shared_act);
+    // close(shared_act);
     sem_close(sem_pos);
-    sem_close(sem_action);
+    // sem_close(sem_action);
 
     return 0; 
 }
@@ -347,4 +329,32 @@ void parse_obstacles_Msg(char *obstacles_msg, Obstacles *obstacles, int *number_
         token = strtok(NULL, "|");
         (*number_obstacles)++;
     }
+}
+
+// Watchdog Function
+void signal_handler(int signo, siginfo_t *siginfo, void *context) 
+{
+    printf("Received signal number: %d \n", signo);
+    if( signo == SIGINT)
+    {
+        printf("Caught SIGINT \n");
+        // close all semaphores
+        // sem_close(sem_action);
+
+        printf("Succesfully closed all semaphores\n");
+        exit(1);
+    }
+    if (signo == SIGUSR1)
+    {
+        // Get watchdog's pid
+        pid_t wd_pid = siginfo->si_pid;
+        // inform on your condition
+        kill(wd_pid, SIGUSR2);
+        // printf("SIGUSR2 SENT SUCCESSFULLY\n");
+    }
+}
+
+void get_args(int argc, char *argv[])
+{
+    sscanf(argv[1], "%d", &server_drone[0]);
 }

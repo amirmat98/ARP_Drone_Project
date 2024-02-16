@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &key_pressing[0], &key_pressing[1]);
+    sscanf(argv[1], "%d", &key_pressing[1]);
 }
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
