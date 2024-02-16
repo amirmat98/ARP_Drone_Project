@@ -16,38 +16,6 @@
 #include <semaphore.h>
 #include <errno.h>
 
-// GLOBAL VARIABLES
-int shared_key;
-int shared_action;
-void *ptr_key;              // Shared memory for Key pressing
-void *ptr_action;           // Shared memory for Drone Position      
-sem_t *sem_key;             // Semaphore for key presses
-sem_t *sem_action;          // Semaphore for drone positions
-
-/*
-void signal_handler(int signo, siginfo_t *siginfo, void *context) 
-{
-    // printf("Received signal number: %d \n", signo);
-    if  (signo == SIGINT)
-    {
-        printf("Caught SIGINT \n");
-        // close all semaphores
-        sem_close(sem_key);
-        sem_close(sem_action);
-
-        printf("Succesfully closed all semaphores\n");
-        exit(1);
-    }
-    if (signo == SIGUSR1)
-    {
-        // Get watchdog's pid
-        pid_t wd_pid = siginfo->si_pid;
-        // inform on your condition
-        kill(wd_pid, SIGUSR2);
-        // printf("SIGUSR2 SENT SUCCESSFULLY\n");
-    }
-}
-*/
 
 // Pipes working with the server
 int key_pressing[2];
@@ -65,18 +33,6 @@ int main(int argc, char *argv[])
     sigaction (SIGUSR1, &sa, NULL);
 
     publish_pid_to_wd(KM_SYM, getpid());
-
-    // Initialize shared memory for KEY PRESSING
-    shared_key = shm_open(SHAREMEMORY_KEY, O_RDWR, 0666);
-    ptr_key = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shared_key, 0);
-
-    // Initialize shared memory for DRONE CONTROL - ACTION
-    shared_action = shm_open(SHAREMEMORY_ACTION, O_RDWR, 0666);
-    ptr_action = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shared_action, 0);
-
-    // Initialize semaphores
-    sem_key = sem_open(SEMAPHORE_KEY, 0);
-    sem_action = sem_open(SEMAPHORE_ACTION, 0);
 
  
     while(1)
@@ -103,7 +59,7 @@ int main(int argc, char *argv[])
 
          /*THIS SECTION IS FOR DRONE ACTION DECISION*/
 
-         char *action = determine_action(pressed_key, ptr_action);
+         char *action = determine_action(pressed_key);
          // printf("Action sent to drone: %s\n\n", action);
          fflush(stdout);
 
@@ -118,17 +74,6 @@ int main(int argc, char *argv[])
             printf("Wrote action message: %s into pipe\n", action);
          }        
     }
-
-    // DELETE: Everything related to shared memory and semaphores
-
-    // close shared memories
-    close(shared_key);
-    close(shared_action);
-
-    // Close and unlink the semaphore
-    sem_close(sem_key);
-    sem_close(sem_action);
-
 
     return 0;
 
@@ -157,11 +102,6 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if  (signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        // close all semaphores
-        sem_close(sem_key);
-        sem_close(sem_action);
-
-        printf("Succesfully closed all semaphores\n");
         exit(1);
     }
     if (signo == SIGUSR1)
@@ -176,7 +116,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 
 // US Keyboard assumed
-char* determine_action(int pressed_key, char *shared_action)
+char* determine_action(int pressed_key)
 {
     char key = toupper(pressed_key);
     int x; int y;
@@ -187,7 +127,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = 0;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        //sprintf(shared_action, "%d,%d", x, y);
         // sprintf(action_msg, "%d, %d", x, y);
         // write_to_pipe(action_des[1], action_msg);
         // return "UP";
@@ -197,7 +137,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = 0;    // Movement on the X axis.
         y = 1;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "DOWN";
         return "0,1";
     }
@@ -205,7 +145,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = -1;    // Movement on the X axis.
         y = 0;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "LEFT";
         return "-1,0";
     }
@@ -213,7 +153,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = 1;    // Movement on the X axis.
         y = 0;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "RIGHT";
         return "1,0";
     }
@@ -221,7 +161,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = -1;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "UP-LEFT";
         return "-1,-1";
     }
@@ -229,7 +169,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = 1;    // Movement on the X axis.
         y = -1;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "UP-RIGHT";
         return "1,-1";
     }
@@ -237,7 +177,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = -1;    // Movement on the X axis.
         y = 1;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "DOWN-LEFT";
         return "-1,1";
     }
@@ -245,7 +185,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = 1;    // Movement on the X axis.
         y = 1;    // Movement on the Y axis.
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "DOWN-RIGHT";
         return "1,1";
     }
@@ -253,7 +193,7 @@ char* determine_action(int pressed_key, char *shared_action)
     {
         x = 900;    // Special value interpreted by drone.c process
         y = 0;
-        sprintf(shared_action, "%d,%d", x, y);
+        // sprintf(shared_action, "%d,%d", x, y);
         // return "STOP";
         return "900,0";
     }

@@ -9,6 +9,6 @@ int read_key_from_pipe (int pipe_des);
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context);
 
-char* determine_action(int pressed_key,  char *shared_act);
+char* determine_action(int pressed_key);
 
 #endif // KEY_MANAGER_H

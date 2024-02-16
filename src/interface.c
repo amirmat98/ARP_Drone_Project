@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
     // Obtain the screen dimensions
     int screen_size_x;
     int screen_size_y;
+    int prev_screen_size_y = 0;
+    int prev_screen_size_x = 0;
     getmaxyx(stdscr, screen_size_y, screen_size_x);
      // Initial drone position will be the middle of the screen.
     int drone_x = screen_size_x / 2;
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
         }
 
         // Create a string for the player's current score
-        char score_msg[50];
+        char score_msg[MSG_LEN];
         sprintf(score_msg, "Your current scroe: %d", score);
 
         // Draws the window with the updated information of the terminal size, drone, targets and obstacles
@@ -180,6 +182,20 @@ int main(int argc, char *argv[])
         if (bytes_read_drone > 0)
         {
             sscanf(server_msg, "D:%d, %d", &drone_x, &drone_y);
+        }
+
+        getmaxyx(stdscr, screen_size_y, screen_size_x);
+        /*SEND x,y screen dimensions to server when screen size changes*/
+        if (screen_size_x != prev_screen_size_x || screen_size_y != prev_screen_size_y)
+        {
+            // Update previous values
+            prev_screen_size_x = screen_size_x;
+            prev_screen_size_y = screen_size_y;
+            // Send data
+            char screen_msg[MSG_LEN];
+            sprintf(screen_msg, "I2:%d,%d", screen_size_x, screen_size_y);
+            // Send it directly to key_manager.c
+            write_to_pipe(interface_server[1], screen_msg);
         }
         
 
