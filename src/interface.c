@@ -21,11 +21,11 @@
 
 
 // Serverless pipes
-int key_pressing[2];
-int lowest_target_fd[2];
+int key_press_des_write;
+int lowest_target_des_write[2];
 
 // Pipes working with the server
-int interface_server[2];
+// int interface_server[2];
 int server_interface[2];
 
 int main(int argc, char *argv[])
@@ -49,6 +49,10 @@ int main(int argc, char *argv[])
     curs_set(0); // Hide the cursor from the terminal
     start_color(); // Initialize color for drawing drone
     init_pair(1, COLOR_BLUE, COLOR_BLACK); // Drone will be of color blue
+    init_pair(2, COLOR_RED, COLOR_BLACK);  // Obstacles are red
+    init_color(COLOR_YELLOW, 1000, 647, 0);  // Define an orange color
+    init_pair(2, COLOR_YELLOW, COLOR_BLACK); // Obstacles are orange
+    init_pair(3, COLOR_GREEN, COLOR_BLACK); // Targets are green
     noecho(); // Disable echoing: no key character will be shown when pressed.
 
     /* SET INITIAL DRONE POSITION */
@@ -63,7 +67,7 @@ int main(int argc, char *argv[])
     // Write the initial position and screen size data into the server
     char initial_msg[MSG_LEN];
     sprintf(initial_msg, "I1:%d,%d,%d,%d", drone_x, drone_y, screen_size_x, screen_size_y);
-    write_to_pipe(interface_server[1], initial_msg);
+    write_to_pipe(server_interface[1], initial_msg);
 
 
     /* Useful variables creation*/
@@ -74,7 +78,7 @@ int main(int argc, char *argv[])
     int prev_screen_size_x = 0;
     int original_screen_size_x;
     int original_screen_size_y;
-    // For game logic
+    // Game logic
     char score_msg[MSG_LEN];
     int score = 0;
     int counter = 0;
@@ -115,7 +119,7 @@ int main(int argc, char *argv[])
             // Send data
             char screen_msg[MSG_LEN];
             sprintf(screen_msg, "I2:%d,%d", screen_size_x, screen_size_y);
-            write_to_pipe(interface_server[1], screen_msg);
+            write_to_pipe(server_interface[1], screen_msg);
             // Re-scale the targets on the screen
             if (iteration > 0 && obtained_targets == 1)
             {
@@ -196,7 +200,7 @@ int main(int argc, char *argv[])
 
         sprintf(lowest_target, "%d,%d", targets[lowest_index].x, targets[lowest_target].y);
         // Send to drone w/ serverless pipe lowest_target
-        write_to_pipe(lowest_target_fd[1], lowest_target);
+        write_to_pipe(lowest_target_des_write[1], lowest_target);
 
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
@@ -247,7 +251,7 @@ int main(int argc, char *argv[])
             char msg[MSG_LEN];
             sprintf(msg, "%c", ch);
             // Send it directly to key_manager.c
-            write_to_pipe(key_pressing[1], msg);
+            write_to_pipe(key_press_des_write[1], msg);
         }
 
         flushinp(); // Clear the input buffer
@@ -267,8 +271,8 @@ int main(int argc, char *argv[])
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d %d %d", &key_pressing[1], &server_interface[0], 
-    &interface_server[1], &lowest_target_fd[1]);
+    sscanf(argv[1], "%d %d %d %d", &key_press_des_write, &server_interface[0],
+           &server_interface[1], &lowest_target_des_write);
 }
 
 
@@ -278,7 +282,11 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        // sleep(2);
+        // Close file desciptors
+        close(key_press_des_write);
+        close(lowest_target_des_write);
+        close(server_interface[0]);
+        close(server_interface[1]);
         exit(1);
     }
     if (signo == SIGUSR1)
@@ -302,31 +310,26 @@ void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets,
     int max_x, max_y;
     getmaxyx(stdscr, max_y, max_x);
 
-    // Draw a rectangular border using the box function
+    // Draw border on the screen
     box(stdscr, 0, 0);
-    refresh();
-
     // Print a title in the top center part of the window
     mvprintw(0, (max_x - 11) / 2, "%s", score_msg);
 
     // Draw a plus sign to represent the drone
     mvaddch(drone_x, drone_y, '+' | COLOR_PAIR(1));
-    refresh();
 
-    // Draw obstacles on the board
-    for (int i = 0; i < number_obstacles, i++)
+    // Draw  targets and obstacles on the board
+    for (int i = 0; i<number_obstacles; i++)
     {
-        // Assuming 'O' represents obstacles
-        mvaddch(obstacles[i].y, obstacles[i].x, '0');
-        refresh();
+        mvaddch(obstacles[i].y, obstacles[i].x, '*' | COLOR_PAIR(2));
     }
-    
-    // Draw targets on the board
+
     for (int i = 0; i < number_targets; i++)
     {
-        mvaddch(targets[i].y, targets[i].x, targets[i].ID + '0');
-        refresh();
+        mvaddch(targets[i].y, targets[i].x, targets[i].ID + '0' | COLOR_PAIR(3));
     }
+
+    refresh();
     
 }
 

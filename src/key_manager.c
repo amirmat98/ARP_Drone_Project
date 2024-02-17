@@ -18,8 +18,8 @@
 
 
 // Pipes working with the server
-int key_pressing[2];
-int km_server[2];
+int key_pressing_read;
+int km_server_write;
 
 int main(int argc, char *argv[])
 {
@@ -43,17 +43,17 @@ int main(int argc, char *argv[])
         // Initializes the file descriptor set readset by clearing all file descriptors from it.
         FD_ZERO(&readset_km);
         // Adds key_pressing to the file descriptor set readset.
-        FD_SET(key_pressing[0], &readset_km);
+        FD_SET(key_pressing_read, &readset_km);
 
         int ready;
          // This waits until a key press is sent from (interface.c)
          do
          {
-            ready = select(key_pressing[0] + 1, &readset_km, NULL, NULL, NULL);
+            ready = select(key_pressing_read + 1, &readset_km, NULL, NULL, NULL);
          } while (ready == -1 && errno == EINTR);
 
          // Read from the file descriptor
-         int pressed_key = read_key_from_pipe(key_pressing[0]);
+         int pressed_key = read_key_from_pipe(key_pressing_read);
          printf("Pressed key: %c\n", (char)pressed_key);
          fflush(stdout);
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
          if ( action != "None")
          {
-            write_to_pipe (km_server[1], action);
+            write_to_pipe (km_server_write, action);
             printf("Wrote action message: %s into pipe\n", action);
          }        
     }
@@ -92,7 +92,7 @@ int read_key_from_pipe (int pipe_des)
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &key_pressing[0], &km_server[1]);
+    sscanf(argv[1], "%d %d", &key_pressing_read, &km_server_write);
 }
 
 
@@ -102,6 +102,8 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if  (signo == SIGINT)
     {
         printf("Caught SIGINT \n");
+        close(key_pressing_read);
+        close(km_server_write);
         exit(1);
     }
     if (signo == SIGUSR1)
