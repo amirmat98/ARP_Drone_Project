@@ -5,7 +5,9 @@
         "semaphore.h": "c",
         "signal.h": "c",
         "time.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "stdio.h": "c",
+        "ipc.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

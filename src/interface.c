@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         /////////////////////////////////////////////////////
 
         getmaxyx(stdscr, screen_size_y, screen_size_x);
-        /*SEND x,y screen dimensions to server when screen size changes*/
+        /*SEND x,y  to server ONLY when screen size changes*/
         if (screen_size_x != prev_screen_size_x || screen_size_y != prev_screen_size_y)
         {
             // Update previous values
@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
             // Send data
             char screen_msg[MSG_LEN];
             sprintf(screen_msg, "I2:%d,%d", screen_size_x, screen_size_y);
-            // Send it directly to key_manager.c
             write_to_pipe(interface_server[1], screen_msg);
         }
 
@@ -140,7 +139,6 @@ int main(int argc, char *argv[])
             }
             else if (server_msg[0] == 'O')
             {
-                //strcpy(obstacles_msg, server_msg);
                 parseObstaclesMsg(server_msg, obstacles, &numObstacles);
                 obtained_obstacles = 1;
             }

@@ -1,10 +1,19 @@
-#include "../include/target.h"
-#include "constants.h"
+#include "targets.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
+
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <sys/select.h>
+#include <sys/stat.h>
+
+#include <signal.h>
 
 void generate_random_cordinates(int sector_width, int sector_height, int *x, int *y)
 {

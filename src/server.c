@@ -243,9 +243,9 @@ int main(int argc, char *argv[])
                 printf("SENT %s to interface.c\n", obstacles_msg);
                 fflush(stdout);
                 // Send to drone.c
-                // write_to_pipe(server_drone[1], obstacles_msg);
-                // printf("SENT %s to drone.c\n", obstacles_msg);
-                // fflush(stdout);
+                write_to_pipe(server_drone[1], obstacles_msg);
+                printf("SENT %s to drone.c\n", obstacles_msg);
+                fflush(stdout);
             }
             else if (bytes_read_obstacles == -1) 
             {
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
         }
 
         // Busy sleep friend
-        usleep(5000);
+        // usleep(5000);
 
     }
 
