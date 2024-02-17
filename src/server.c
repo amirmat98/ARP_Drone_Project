@@ -24,6 +24,8 @@ int drone_server[2];
 int server_interface[2];
 int server_obstacles[2];
 int obstacles_server[2];
+int server_targets[2];
+int targets_server[2];
 
 // GLOBAL VARIABLES
 // Attach to shared memory for key presses
@@ -177,8 +179,8 @@ int main(int argc, char *argv[])
                 if(interface_msg[0] == 'I' && interface_msg[1] == '2')
                 {
                     write_to_pipe(server_obstacles[1],interface_msg);
-                    printf("SENT %s to obstacles.c\n", interface_msg);
-                    // TODO: Send to targets.c
+                    write_to_pipe(server_targets[1],interface_msg);
+                    printf("SENT %s to obstacles.c and targets.c\n", interface_msg);
                 }
             }
         }
@@ -253,8 +255,37 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Busy sleep friend
-        // usleep(5000);
+        /* Handle pipe from targets.c */
+        fd_set read_targets;
+        FD_ZERO(&read_targets);
+        FD_SET(targets_server[0], &read_targets);
+        
+        char targets_msg[MSG_LEN];
+
+        int ready_targets = select(targets_server[0] + 1, &read_targets, NULL, NULL, &timeout);
+        if (ready_targets == -1) 
+        {
+            perror("Error in select");
+        }
+
+        if (ready_targets > 0 && FD_ISSET(targets_server[0], &read_targets)) 
+        {
+            ssize_t bytes_read_targets = read(targets_server[0], targets_msg, MSG_LEN);
+            if (bytes_read_targets > 0) 
+            {
+                // Read acknowledgement
+                printf("RECEIVED %s from targets.c\n", targets_msg);
+                fflush(stdout);
+                // Send to interface.c
+                write_to_pipe(server_interface[1],targets_msg);
+                printf("SENT %s to interface.c\n", targets_msg);
+                fflush(stdout);
+            }
+            else if (bytes_read_targets == -1) 
+            {
+                perror("Read pipe targets_server");
+            }
+        }
 
     }
 
@@ -265,10 +296,11 @@ int main(int argc, char *argv[])
 }
 
 void get_args(int argc, char *argv[])
-{
-        sscanf(argv[1], "%d %d %d %d %d %d %d", &km_server[0], &server_drone[1], 
-        &interface_server[0], &drone_server[0], &server_interface[1],
-        &server_obstacles[1], &obstacles_server[0]);
+{      
+    sscanf(argv[1], "%d %d %d %d %d %d %d %d %d", &km_server[0], &server_drone[1], 
+    &interface_server[0], &drone_server[0], &server_interface[1],
+    &server_obstacles[1], &obstacles_server[0], &server_targets[1],
+    &targets_server[0]);
 }
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 

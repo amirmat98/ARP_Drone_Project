@@ -13,6 +13,7 @@ struct Target
     int y;
 };
 
+void get_args(int argc, char *argv[]);
 // Function to generate random coordinates within a given sector
 void generate_random_cordinates(int sector_width, int sector_height, int *x, int *y);
 

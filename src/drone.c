@@ -19,6 +19,9 @@
 #include <string.h>
 #include <errno.h>
 
+// Serverless pipes
+int lowest_target_fd[2];
+
 // Pipes working with the server
 int server_drone[2];
 int drone_server[2];
@@ -43,7 +46,9 @@ int main(int argc, char *argv[])
     // Variable declaration
     int x; int y;
     int screen_size_x; int screen_size_y;
-    int action_x; int action_y;
+    int action_x; int action_y;    
+    int target_x; int target_y;
+    int valid_target;
 
 
     // Variables for differential_equations
@@ -130,9 +135,41 @@ int main(int argc, char *argv[])
             parse_obstacles_Msg(obstacles_msg, obstacles, &number_obstacles);
         }
 
+        //////////////////////////////////////////////////////
+        /* SECTION 2: READ DATA FROM INTERFACE.C (SERVERLESS PIPE) */
+        /////////////////////////////////////////////////////
+
+        fd_set read_interface;
+        FD_ZERO(&read_interface);
+        FD_SET(lowest_target_fd[0], &read_interface);
+        
+        char msg[MSG_LEN];
+
+        int ready_targets = select(lowest_target_fd[0] + 1, &read_interface, NULL, NULL, &timeout);
+        if (ready_targets == -1) 
+        {
+            perror("Error in select");
+        }
+
+        if (ready_targets > 0 && FD_ISSET(lowest_target_fd[0], &read_interface))
+        {
+            ssize_t bytes_read_interface = read(lowest_target_fd[0], msg, MSG_LEN);
+            if (bytes_read_interface > 0) 
+            {
+                // Read acknowledgement
+                printf("RECEIVED %s from interface.c\n", msg);
+                sscanf(msg, "%d,%d", &target_x, &target_y);
+                fflush(stdout);
+                valid_target = 1;
+            }
+            else if (bytes_read_interface == -1) 
+            {
+                perror("Read pipe lowest_target_fd");
+            }
+        }
 
         //////////////////////////////////////////////////////
-        /* SECTION 2: OBTAIN THE FORCES EXERTED ON THE DRONE*/
+        /* SECTION 3: OBTAIN THE FORCES EXERTED ON THE DRONE*/
         /////////////////////////////////////////////////////  
 
         if(euler_method_flag)
@@ -165,18 +202,20 @@ int main(int argc, char *argv[])
             double external_force_y = 0.0;
 
             // TARGETS
-            char targets_msg[] = "140,23";
-            double target_x, target_y;
-            sscanf(targets_msg, "%1f,%1f", &target_x, &target_y);
-            calculate_extenal_force(pos_x, pos_y, target_x, target_y, 0.0, 0.0, &external_force_x, &external_force_y);
+            if (valid_target == 1)
+            {
+                calculate_extenal_force(pos_x, pos_y, target_x, target_y, 0.0, 0.0, &external_force_x, &external_force_y);
+            }
 
+
+            // OBSTACLES
             for (int i = 0; i < number_obstacles; i++)
             {
                 calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
             }
 
             //////////////////////////////////////////////////////
-            /* SECTION 3: CALCULATE POSITION DATA */
+            /* SECTION 4: CALCULATE POSITION DATA */
             ///////////////////////////////////////////////////// 
 
             double max_x = (double)screen_size_x;
@@ -198,7 +237,7 @@ int main(int argc, char *argv[])
 
             
             //////////////////////////////////////////////////////
-            /* SECTION 4: SEND THE DRONE POSITION TO SERVER */
+            /* SECTION 5: SEND THE DRONE POSITION TO SERVER */
             ///////////////////////////////////////////////////// 
             char position_msg[MSG_LEN];
             sprintf(position_msg, "D:%d,%d", x_f, y_f);
@@ -303,15 +342,6 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
         *external_force_y -= 0;
     }
 
-    /*
-    // TO FIX A BUG WITH BIG FORCES APPEARING OUT OF NOWHERE
-    if (*external_force_x > 50) {*external_force_x = 0;}
-    if (*external_force_y > 50) {*external_force_y = 0;}
-    if (*external_force_x < 50) {*external_force_x = 0;}
-    if (*external_force_y < 50) {*external_force_y = 0;}
-    */
-
-
 }
 
 void parse_obstacles_Msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
@@ -357,7 +387,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &server_drone[0], &drone_server[1]);
+    sscanf(argv[1], "%d %d %d", &server_drone[0], &drone_server[1], &lowest_target_fd[0]);
 }
 
 int decypher_message(const char *server_msg) 

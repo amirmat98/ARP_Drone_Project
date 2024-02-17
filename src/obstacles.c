@@ -38,13 +38,12 @@ int main(int argc, char *argv[])
     timeout.tv_usec = 0;
 
     // To compare previous values
-    int obstained_dimensions = 0;
-    int prev_screen_x = 0;
-    int prev_screen_y = 0;
+    int obtained_dimensions = 0;
+
 
     // Variables
-    int screen_x;
-    int screen_y;
+    int screen_size_x; 
+    int screen_size_y;
 
     while (1)
     {
@@ -69,27 +68,27 @@ int main(int argc, char *argv[])
             ssize_t bytes_read = read(server_obstacles[0], server_msg, MSG_LEN);
             if (bytes_read > 0) 
             {
-                sscanf(server_msg, "I2:%d,%d", &screen_x, &screen_y);
+                sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
                 printf("Obtained from server: %s\n", server_msg);
                 fflush(stdout);
-                obstained_dimensions = 1;
+                obtained_dimensions = 1;
             }
         }
-        if(obstained_dimensions == 0)
+        if(obtained_dimensions == 0)
         {
             continue;
         }
 
         //////////////////////////////////////////////////////
-        /* SECTION 2: SPAWN OBSTACLES LOGIC & SEND DATA */
+        /* SECTION 2: OBSTACLES GENERATION & SEND DATA */
         /////////////////////////////////////////////////////
 
         // Check if it's time to spawn a new obstacle
         if (number_obstacles < MAX_OBSTACLES) 
         {
             Obstacle new_obstacle;
-            new_obstacle.x = rand() % screen_x;
-            new_obstacle.y = rand() % screen_y;
+            new_obstacle.x = rand() % screen_size_x;
+            new_obstacle.y = rand() % screen_size_y;
             new_obstacle.spawnTime = time(NULL) + (rand() % (MAX_SPAWN_TIME - MIN_SPAWN_TIME + 1) + MIN_SPAWN_TIME);
             obstacles[number_obstacles] = new_obstacle;
             number_obstacles++;
@@ -108,8 +107,8 @@ int main(int argc, char *argv[])
             if (obstacles[i].spawnTime <= currentTime) 
             {
                 // Replace the obstacle with a new one
-                obstacles[i].x = rand() % screen_x;
-                obstacles[i].y = rand() % screen_y;
+                obstacles[i].x = rand() % screen_size_x;
+                obstacles[i].y = rand() % screen_size_y;
                 obstacles[i].spawnTime = time(NULL) + (rand() % (MAX_SPAWN_TIME - MIN_SPAWN_TIME + 1) + MIN_SPAWN_TIME);
             }
         }
