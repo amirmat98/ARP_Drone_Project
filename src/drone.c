@@ -110,13 +110,13 @@ int main(int argc, char *argv[])
                 else if(server_msg[0] == 'I' && server_msg[1] == '2')
                 {
                     sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
-                    printf("Changed screen dimensions to: %s\n", server_msg);
+                    // printf("Changed screen dimensions to: %s\n", server_msg);
                     fflush(stdout);
                 }
                 // Message origin: Obstacles
                 else if (server_msg[0 == 'O'])
                 {
-                    printf("Obtained obstacles message: %s\n", server_msg);
+                    // printf("Obtained obstacles message: %s\n", server_msg);
                     parse_obstacles_Msg(server_msg, obstacles, number_obstacles);
                     obtained_obstacles = 1;
                 }
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
             if (bytes_read_interface > 0) 
             {
                 // Read acknowledgement
-                printf("RECEIVED %s from interface.c\n", msg);
+                // printf("RECEIVED %s from interface.c\n", msg);
                 sscanf(msg, "%d,%d", &target_x, &target_y);
                 fflush(stdout);
                 valid_target = 1;
@@ -212,6 +212,23 @@ int main(int argc, char *argv[])
             for (int i = 0; i < number_obstacles; i++)
             {
                 calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
+            }
+
+            if(external_force_x > EXT_FORCE_MAX)
+            {
+                external_force_x = 0.0;
+            }
+            if(external_force_x < -EXT_FORCE_MAX)
+            {
+                external_force_x = 0.0;
+            }
+            if(external_force_y > EXT_FORCE_MAX)
+            {
+                external_force_y = 0.0;
+            }
+            if(external_force_y < -EXT_FORCE_MAX)
+            {
+                external_force_y = 0.0;
             }
 
             //////////////////////////////////////////////////////
