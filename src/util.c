@@ -49,6 +49,7 @@ void write_to_pipe(int pipe_des, char message[])
     }
 }
 
+// TODO: add to util.h and add comments
 void log_msg(int who, int type, char *msg)
 {
     int shm_logs = shm_open(SHAREMEMORY_LOGS, O_RDWR, 0666);
