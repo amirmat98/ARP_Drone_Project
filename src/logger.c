@@ -1,5 +1,5 @@
-# include "logger.h"
 #include "constants.h"
+# include "logger.h"
 #include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,7 +99,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
         sem_unlink(SEMAPHORE_LOGS_2);        // unlink semaphores
         sem_unlink(SEMAPHORE_LOGS_3);        // unlink semaphores
         // Close the file
-        fclose(logfile);
+        fclose(log_file);
 
         printf("Succesfully closed all semaphores\n");
         sleep(2);

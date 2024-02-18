@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
         char km_msg[MSG_LEN];
 
-        int read_km = select(km_server[0] + 1, &read_km, NULL, NULL, &timeout);
+        int ready_km = select(km_server[0] + 1, &read_km, NULL, NULL, &timeout);
         if (ready_km == -1) 
         {
             perror("Error in select");
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        * Handle pipe from drone.c */
+        /* Handle pipe from drone.c */
         fd_set read_drone;
         FD_ZERO(&read_interface);
         FD_SET(drone_server[0], &read_drone);
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 }
 
 void get_args(int argc, char *argv[])
-{      
+{
     sscanf(argv[1], "%d %d %d %d %d %d %d %d %d", &km_server[0], &server_drone[1], 
     &interface_server[0], &drone_server[0], &server_interface[1],
     &server_obstacles[1], &obstacles_server[0], &server_targets[1],

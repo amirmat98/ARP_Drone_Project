@@ -23,15 +23,36 @@ int obstacles_server[2];
 int server_targets[2];
 int targets_server[2];
 
-    // PIDs
-    pid_t server_pid;
-    pid_t window_pid;
-    pid_t km_pid;
-    pid_t drone_pid;
-    pid_t wd_pid;
-    pid_t logger_pid;
-    pid_t targets_pid;
-    pid_t obstacles_pid;
+// PIDs
+pid_t server_pid;
+pid_t window_pid;
+pid_t km_pid;
+pid_t drone_pid;
+pid_t wd_pid;
+pid_t logger_pid;
+pid_t targets_pid;
+pid_t obstacles_pid;
+
+void signal_handler(int signo, siginfo_t *siginfo, void *context)
+{
+    if (signo == SIGINT)
+    {
+        printf("Caught SIGINT, killing all children... \n");
+        kill(server_pid, SIGKILL);
+        kill(window_pid, SIGKILL);
+        kill(km_pid, SIGKILL);
+        kill(drone_pid, SIGKILL);
+        kill(wd_pid, SIGKILL);
+        kill(logger_pid, SIGKILL);
+        kill(targets_pid, SIGKILL);
+        kill(obstacles_pid, SIGKILL);
+
+        printf("Closing all pipes.. \n");
+        close_all_pipes();
+
+        exit(1);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -172,8 +193,8 @@ int main(int argc, char *argv[])
     
 
     /* Window - Interface */
-    char *window_args[] = {"konsole", "-e", "./build/interface", window_des, NULL};
-    window_pid = create_child(window_args[0], interface_fds);
+    char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL};
+    window_pid = create_child(window_args[0], window_args);
     number_process++;
     usleep(delay);
 
@@ -229,27 +250,6 @@ int create_child(const char *program, char **arg_list)
     else
     {
         perror("Fork failed");
-    }
-}
-
-void signal_handler(int signo, siginfo_t *siginfo, void *context)
-{
-    if (signo == SIGINT)
-    {
-        printf("Caught SIGINT, killing all children... \n");
-        kill(server_pid, SIGKILL);
-        kill(window_pid, SIGKILL);
-        kill(km_pid, SIGKILL);
-        kill(drone_pid, SIGKILL);
-        kill(wd_pid, SIGKILL);
-        kill(logger_pid, SIGKILL);
-        kill(targets_pid, SIGKILL);
-        kill(obstacles_pid, SIGKILL);
-
-        printf("Closing all pipes.. \n");
-        close_all_pipes();
-
-        exit(1);
     }
 }
 

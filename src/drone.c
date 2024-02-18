@@ -61,6 +61,10 @@ int main(int argc, char *argv[])
     double v_y = 0.0;    // Initial velocity of y
     double force_y = 0; // Applied force in the y direction
     double external_force_y = 0; // Initial external force
+
+    int obtained_obstacles = 0;
+    Obstacles obstacles[80];
+    int number_obstacles;
     
     bool euler_method_flag = true; // For testing purposes.
 
@@ -74,7 +78,7 @@ int main(int argc, char *argv[])
         /* SECTION 1: READ DATA FROM SERVER */
         /////////////////////////////////////////////////////
         
-        fd_set = read_fds;
+        fd_set read_fds;
         FD_ZERO(&read_fds);
         FD_SET(server_drone[0], &read_fds);
 
@@ -117,7 +121,7 @@ int main(int argc, char *argv[])
                 else if (server_msg[0 == 'O'])
                 {
                     // printf("Obtained obstacles message: %s\n", server_msg);
-                    parse_obstacles_Msg(server_msg, obstacles, number_obstacles);
+                    parse_obstacles_Msg(server_msg, obstacles, &number_obstacles);
                     obtained_obstacles = 1;
                 }
             }
@@ -261,27 +265,6 @@ int main(int argc, char *argv[])
             write_to_pipe(drone_server[1], position_msg);
         }
 
-        /* DRONE CONTROL WITH THE STEP METHOD*/
-        else
-        {
-            if(action_x >= -1.0 && action_x <= 1.0)
-            {
-                // Calling the function
-                step_method(&x,&y,action_x,action_y);
-                // Only print when there is change in the position.
-                if(action_x!=0 || action_y!=0)
-                {
-                    printf("Action (X,Y): %s\n",shared_action);
-                    printf("X - Position: %d / Velocity: %.2f\t|\t", x, v_x);
-                    printf("Y - Position: %d / Velocity: %.2f\n", y, v_y);
-                    fflush(stdout);
-                }
-                sprintf(shared_action, "%d,%d", 0, 0); // Zeros written on action memory
-                // Write new drone position to shared memory
-                sprintf(shared_position, "%d,%d,%d,%d", x, y, max_x, max_y);
-                sem_post(sem_pos);
-            }
-        }
         // Introduce a delay on the loop to simulate real-time intervals.
         usleep(D_T * 1e6); 
     }
@@ -329,8 +312,8 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
     }
     else if (distance_to_target < start_distance)
     {
-        *external_force_x += coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * cos(angle_to_target);
-        *external_force_y += coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * sin(angle_to_target);
+        *external_force_x += Coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * cos(angle_to_target);
+        *external_force_y += Coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * sin(angle_to_target);
     }
     else
     {
@@ -350,8 +333,8 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
     }
     else if (distance_to_obstacle < start_distance)
     {
-        external_force_x -= coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * cos(angle_to_obstacle);
-        external_force_y -= coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * sin(angle_to_obstacle);
+        *external_force_x -= Coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * cos(angle_to_obstacle);
+        *external_force_y -= Coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * sin(angle_to_obstacle);
     }
     else
     {

@@ -127,7 +127,7 @@ void print_obstacles(Obstacle obstacles[], int number_obstacles, char obstacles_
     // Append the letter O and the total number of obstacles to obstacles_msg
     sprintf(obstacles_msg, "0[%d]", number_obstacles);
 
-    for (int i = 0; i < number_obstacles, i++)
+    for (int i = 0; i < number_obstacles; i++)
     {
         // Append obstacle information to obstacles_msg
         sprintf(obstacles_msg + strlen(obstacles_msg), "%d, %d", obstacles[i].x, obstacles[i].y);

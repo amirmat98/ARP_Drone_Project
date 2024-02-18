@@ -7,11 +7,10 @@
 #define MAX_TARGETS 8
 
 // Structure to represent a target
-struct Target
-{
+typedef struct {
     int x;
     int y;
-};
+} Target;
 
 void get_args(int argc, char *argv[]);
 // Function to generate random coordinates within a given sector

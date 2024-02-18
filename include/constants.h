@@ -51,42 +51,19 @@
 #define SIZE_SHM 4096 // General size of Shared memory (in bytes)
 #define FLOAT_TOLERANCE 0.0044
 
-#define SLEEP_DRONE 100000  // To let the interface.c process execute first write the initial positions.
-
-// Drone Constants
-#define MASS 1.0    // Mass of the object
-#define DAMPING 1 // Damping coefficient
-#define D_T 0.1 // Time interval in seconds
-#define F_MAX 30.0 // Maximal force that can be acted on the drone's motors
-#define EXT_FORCE_MAX 40.0 // Maximum external force on any axis.
-const double coefficient = 400.0; // This was obtained by trial-error
-double min_distance = 2.0;
-double start_distance = 5.0; 
-
-#define THRESHOLD 50 // Threshold for counters
-
-
-
 // struct of obstacles
-struct Obstacles
-{
+typedef struct {
     int total;
     int x;
     int y;
-};
+} Obstacles;
 
 // struct of Targets
-struct Targets
-{
+typedef struct {
     int ID;
     int x;
     int y;
-};
-
-
-
-
-
+} Targets;
 
 
 

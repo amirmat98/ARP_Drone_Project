@@ -17,8 +17,8 @@ void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets,
 
 int find_lowest_ID(Targets *targets, int number_targets);
 void remove_target(Targets *targets, int *number_targets, int index_to_remove);
-void parse_obstacles_message(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles, Targets *original_targets);
-void parse_target_message(char *targets_msg, Targets *targets, int *number_targets);
+void parse_obstacles_message(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles);
+void parse_target_message(char *targets_msg, Targets *targets, int *number_targets, Targets *original_targets);
 
 void draw_final_window(int score);
 

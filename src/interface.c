@@ -22,7 +22,7 @@
 
 // Serverless pipes
 int key_press_des_write;
-int lowest_target_des_write[2];
+int lowest_target_des_write;
 
 // Pipes working with the server
 // int interface_server[2];
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
             }
             else if (server_msg[0] == 'O')
             {
-                parseObstaclesMsg(server_msg, obstacles, &numObstacles);
+                parse_obstacles_message(server_msg, obstacles, &number_obstacles);
                 obtained_obstacles = 1;
             }
             else if (server_msg[0] == 'T')
@@ -198,9 +198,9 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
-        sprintf(lowest_target, "%d,%d", targets[lowest_index].x, targets[lowest_target].y);
+        sprintf(lowest_target, "%d,%d", targets[lowest_index].x, targets[lowest_index].y);
         // Send to drone w/ serverless pipe lowest_target
-        write_to_pipe(lowest_target_des_write[1], lowest_target);
+        write_to_pipe(lowest_target_des_write, lowest_target);
 
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
             char msg[MSG_LEN];
             sprintf(msg, "%c", ch);
             // Send it directly to key_manager.c
-            write_to_pipe(key_press_des_write[1], msg);
+            write_to_pipe(key_press_des_write, msg);
         }
 
         flushinp(); // Clear the input buffer
@@ -396,7 +396,7 @@ void parse_target_message(char *targets_msg, Targets *targets, int *number_targe
 
         // To save the original values
         sscanf(token, "%d,%d", &original_targets[*number_targets].x, &original_targets[*number_targets].y);
-        original_targets[*number_targets].id = *number_targets + 1;
+        original_targets[*number_targets].ID = *number_targets + 1;
 
         // Handle token
         token = strtok(NULL, "|");
