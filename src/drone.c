@@ -1,20 +1,21 @@
 #include "drone.h"
 #include "constants.h"
 #include "util.h"
+
 #include <stdio.h>       
 #include <stdlib.h>
 #include <stdbool.h>
-#include <ctype.h>
-#include <math.h>
 #include <unistd.h>
+
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 
-#include <semaphore.h>
 #include <fcntl.h>
+#include <math.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
@@ -31,16 +32,12 @@ int main(int argc, char *argv[])
 {
     get_args(argc, argv);
 
-    // Watchdog Variables
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
     sa.sa_flags = SA_SIGINFO;
     sigaction(SIGINT, &sa, NULL);
     sigaction (SIGUSR1, &sa, NULL);    
     publish_pid_to_wd(DRONE_SYM, getpid());
-
-    // usleep(SLEEP_DRONE); // To let the interface.c process execute first and write the initial positions.
-
 
     //-----------------------------------------------------------------------------------------//
     // Variable declaration
@@ -102,6 +99,7 @@ int main(int argc, char *argv[])
                 {
                     sscanf(server_msg, "K:%d,%d", &action_x, &action_y);
                 }
+                // Message origin: Interface
                 else if(server_msg[0] == 'I' && server_msg[1] == '1')
                 {
                     sscanf(server_msg, "I1:%d,%d,%d,%d", &x, &y, &screen_size_x, &screen_size_y);
@@ -121,7 +119,7 @@ int main(int argc, char *argv[])
                 else if (server_msg[0 == 'O'])
                 {
                     // printf("Obtained obstacles message: %s\n", server_msg);
-                    parse_obstacles_Msg(server_msg, obstacles, &number_obstacles);
+                    parse_obstacles_msg(server_msg, obstacles, &number_obstacles);
                     obtained_obstacles = 1;
                 }
             }
@@ -136,7 +134,7 @@ int main(int argc, char *argv[])
         char obstacles_msg[] = "O[1]200,200"; // Random for initial execution
         if (obtained_obstacles == 0)
         {
-            parse_obstacles_Msg(obstacles_msg, obstacles, &number_obstacles);
+            parse_obstacles_msg(obstacles_msg, obstacles, &number_obstacles);
         }
 
         //////////////////////////////////////////////////////
@@ -185,13 +183,13 @@ int main(int argc, char *argv[])
                 force_x += (double)action_x;
                 force_y += (double)action_y;
                 /* Capping to the max value of the drone's force */
-                if(force_x>F_MAX)
+                if(force_x > F_MAX)
                     {force_x = F_MAX;}
-                if(force_y>F_MAX)
+                if(force_y > F_MAX)
                     {force_y = F_MAX;}
-                if(force_x<-F_MAX)
+                if(force_x < -F_MAX)
                     {force_x = -F_MAX;}
-                if(force_y<-F_MAX)
+                if(force_y < -F_MAX)
                     {force_y = -F_MAX;}
             }
             // Other values represent STOP
@@ -344,7 +342,7 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
 
 }
 
-void parse_obstacles_Msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
+void parse_obstacles_msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
 {
     int total_obstacles;
     sscanf(obstacles_msg, "0[%d]", &total_obstacles);
@@ -365,13 +363,10 @@ void parse_obstacles_Msg(char *obstacles_msg, Obstacles *obstacles, int *number_
 // Watchdog Function
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
-    printf("Received signal number: %d \n", signo);
+    // printf("Received signal number: %d \n", signo);
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        // close all semaphores
-        // sem_close(sem_action);
-
         printf("Succesfully closed all semaphores\n");
         exit(1);
     }
@@ -388,24 +383,4 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 void get_args(int argc, char *argv[])
 {
     sscanf(argv[1], "%d %d %d", &server_drone[0], &drone_server[1], &lowest_target_fd[0]);
-}
-
-int decypher_message(const char *server_msg) 
-{
-    if (server_msg[0] == 'K') 
-    {
-        return 1;
-    } 
-    else if (server_msg[0] == 'I' && server_msg[1] == '1') 
-    {
-        return 2;
-    } 
-    else if (server_msg[0] == 'I' && server_msg[1] == '2') 
-    {
-        return 3;
-    }
-    else 
-    {
-        return 0;
-    }
 }

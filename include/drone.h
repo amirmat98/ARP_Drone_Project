@@ -14,28 +14,19 @@
 
 // New Constants 
 #define Coefficient 400.0 // This was obtained by trial-error
-#define minDistance 2.0
-#define startDistance 5.0
+#define min_distance 2.0
+#define start_distance 5.0
 
-
-const double coefficient = 400.0; // This was obtained by trial-error
-double min_distance = 2.0;
-double start_distance = 5.0; 
-
-
-void differential_equations(double *position, double *velocity, double force, double external_force, double *max_pos);
-
-void step_method(int *x, int *y, int action_x, int action_y);
 
 void get_args(int argc, char *argv[]);
 
+void signal_handler(int signo, siginfo_t *siginfo, void *context);
+
 void calculate_extenal_force(double drone_x, double drone_y, double target_x, double target_y, double obstacle_x, double obstacle_y, double *external_force_x, double *external_force_y);
 
-void parse_obstacles_Msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles);
+void parse_obstacles_msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles);
 
-int decypher_message(const char *server_msg);
-
-void signal_handler(int signo, siginfo_t *siginfo, void *context);
+void differential_equations(double *position, double *velocity, double force, double external_force, double *max_pos);
 
 
 #endif //DRONE_H

@@ -1,14 +1,17 @@
+#include "logger.h"
 #include "constants.h"
-# include "logger.h"
 #include "util.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+
 #include <semaphore.h>
 #include <signal.h>
 #include <fcntl.h>

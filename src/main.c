@@ -162,13 +162,13 @@ int main(int argc, char *argv[])
 
 
     /* Targets */
-    char *targets_args[] = {"konsole", "-e", "./build/key_manager", targets_fds, NULL};
+    char *targets_args[] = {"konsole", "-e", "./build/targets", targets_fds, NULL};
     targets_pid = create_child(targets_args[0], targets_args);
     number_process++;
     usleep(delay);
 
     /* Obstacles */
-    char *obstacles_args[] = {"konsole", "-e", "./build/key_manager", obstacles_fds, NULL};
+    char *obstacles_args[] = {"konsole", "-e", "./build/obstacles", obstacles_fds, NULL};
     obstacles_pid = create_child(obstacles_args[0], obstacles_args);
     number_process++;
     usleep(delay);

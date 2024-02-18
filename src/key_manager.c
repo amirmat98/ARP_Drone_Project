@@ -1,15 +1,18 @@
 #include "key_manager.h"
 #include "constants.h"
 #include "util.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+
 #include <ctype.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -19,6 +22,7 @@
 
 // Pipes working with the server
 int key_pressing_read;
+// Pipes working with the server
 int km_server_write;
 
 int main(int argc, char *argv[])

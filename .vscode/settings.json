@@ -8,7 +8,9 @@
         "unistd.h": "c",
         "stdio.h": "c",
         "ipc.h": "c",
-        "select.h": "c"
+        "select.h": "c",
+        "errno.h": "c",
+        "fcntl.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

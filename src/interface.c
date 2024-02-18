@@ -91,7 +91,6 @@ int main(int argc, char *argv[])
     Targets targets[80];
     Targets original_targets[80];
     int number_targets;
-    // parse_target_message(targets_msg, targets, &number_targets);
 
     Obstacles obstacles[80];
     int number_obstacles;
@@ -259,8 +258,6 @@ int main(int argc, char *argv[])
         // Counter/Timer linked to score calculations
         counter++;
         usleep(10000);
-
-
     }
 
     // Clean up and finish up resources taken by ncurses
@@ -278,7 +275,6 @@ void get_args(int argc, char *argv[])
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
-    // printf(" Received signal number: %d \n", signo);
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
@@ -316,7 +312,7 @@ void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets,
     mvprintw(0, (max_x - 11) / 2, "%s", score_msg);
 
     // Draw a plus sign to represent the drone
-    mvaddch(drone_x, drone_y, '+' | COLOR_PAIR(1));
+    mvaddch(drone_y, drone_x, '+' | COLOR_PAIR(1));
 
     // Draw  targets and obstacles on the board
     for (int i = 0; i<number_obstacles; i++)
@@ -339,7 +335,7 @@ int find_lowest_ID(Targets *targets, int number_targets)
 {
     int lowest_ID = targets[0].ID;
     int lowest_index = 0;
-    for (int i = 1; i<number_targets; i++)
+    for (int i = 1; i < number_targets; i++)
     {
         if (targets[i].ID < lowest_ID)
         {
@@ -391,7 +387,7 @@ void parse_target_message(char *targets_msg, Targets *targets, int *number_targe
     while (token != NULL)
     {
         // Targets x,y will change throughout execution
-        sscanf (token, "%d , %d", &targets[*number_targets].x, &targets[*number_targets].y );
+        sscanf (token, "%d , %d", &targets[*number_targets].x, &targets[*number_targets].y);
         targets[*number_targets].ID = *number_targets + 1;
 
         // To save the original values
@@ -436,23 +432,4 @@ void draw_final_window(int score)
     sleep(5);
     // Cleanup, close ncurses and exit.
     endwin();
-}
-
-int decypher_message(char server_msg[]) 
-{
-    if (server_msg[0] == 'D') 
-    {
-        return 1;
-    } 
-    else if (server_msg[0] == 'T') 
-    {
-        return 2;
-    } else if (server_msg[0] == 'O') 
-    {
-        return 3;
-    }
-    else 
-    {
-        return 0;
-    }
 }
