@@ -46,33 +46,37 @@ int main(int argc, char *argv[])
         FD_SET(key_pressing_read, &readset_km);
 
         int ready;
-         // This waits until a key press is sent from (interface.c)
-         do
-         {
+        // This waits until a key press is sent from (interface.c)
+        do
+        {
             ready = select(key_pressing_read + 1, &readset_km, NULL, NULL, NULL);
-         } while (ready == -1 && errno == EINTR);
+        } while (ready == -1 && errno == EINTR);
 
-         // Read from the file descriptor
-         int pressed_key = read_key_from_pipe(key_pressing_read);
-         printf("Pressed key: %c\n", (char)pressed_key);
-         fflush(stdout);
+        // Read from the file descriptor
+        int pressed_key = read_key_from_pipe(key_pressing_read);
+        // char msg_pressed_key[240];
+        /*s*/printf(/*msg_pressed_key,*/"Pressed key: %c\n", (char)pressed_key);
+        // log_msg(msg_pressed_key);
 
-         /*THIS SECTION IS FOR DRONE ACTION DECISION*/
+        /*THIS SECTION IS FOR DRONE ACTION DECISION*/
 
-         char *action = determine_action(pressed_key);
-         // printf("Action sent to drone: %s\n\n", action);
-         fflush(stdout);
+        char *action = determine_action(pressed_key);
+        // printf("Action sent to drone: %s\n\n", action);
+        fflush(stdout);
 
-         // TEMPORAL/DELETE AFTER: TESTING DATA SENT TO PIPE ACTION
-         char key = toupper(pressed_key);
-         int x; int y;
-         // char action_msg[20];
+        // TEMPORAL/DELETE AFTER: TESTING DATA SENT TO PIPE ACTION
+        char key = toupper(pressed_key);
+        int x; int y;
+        // char action_msg[20];
 
-         if ( action != "None")
-         {
+        if ( action != "None")
+        {
             write_to_pipe (km_server_write, action);
-            printf("Wrote action message: %s into pipe\n", action);
-         }        
+            // printf("Wrote action message: %s into pipe\n", action);
+            // char msg[MSG_LEN];
+            /*s*/printf(/*msg,*/"Wrote action message: %s into pipe\n", action);
+            // log_msg(msg);
+        }        
     }
 
     return 0;
@@ -203,4 +207,9 @@ char* determine_action(int pressed_key)
     {
         return "None";
     }
+}
+
+void log_msg(char *msg)
+{
+    write_message_to_logger(KM_SYM, INFO, msg);
 }

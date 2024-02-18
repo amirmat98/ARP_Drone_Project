@@ -11,4 +11,6 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context);
 
 char* determine_action(int pressed_key);
 
+void log_msg(char *msg);
+
 #endif // KEY_MANAGER_H

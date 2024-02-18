@@ -16,12 +16,16 @@
 // GLOBAL VARIABLES
 int shm_logs;             // File descriptor for logs shm
 void *ptr_logs;              // Shared memory for logs
-sem_t *sem_logs;              // Semphore for logging info and errors
+sem_t *sem_logs_1;              // Semphore for logging info and errors
+sem_t *sem_logs_2;              // Semphore for logging info and errors
+sem_t *sem_logs_3;              // Semphore for logging info and errors
 FILE *log_file;               // Pointer to the logfile
 
 
 int main(int argc, char *argv[])
 {
+    printf("You got here!");
+    sleep(5);
     struct sigaction sa;
     sa.sa_sigaction = signal_handler; 
     sa.sa_flags = SA_SIGINFO;
@@ -35,16 +39,29 @@ int main(int argc, char *argv[])
     shm_logs = shm_open(SHAREMEMORY_LOGS, O_RDWR, 0666);
     ptr_logs = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_logs, 0);
 
-    // Initialize semaphores
-    sem_logs = sem_open(SEMAPHORE_LOGS, 0);
+    
+    sem_logs_1 = sem_open(SEMAPHORE_LOGS_1, 0);
+    sem_logs_2 = sem_open(SEMAPHORE_LOGS_2, 0);
+    sem_logs_3 = sem_open(SEMAPHORE_LOGS_3, 0);
 
-    create_logfile(log_file);
+    char path_file[256];
+    create_logfile_name(path_file);
+
+    // Create the logfile
+    log_file = fopen(path_file, "a");
+    if (log_file == NULL)
+    {
+        perror("Unable to open the log file.");
+        exit(1);
+    }
+    // Inform that you can log the message
+    sem_post(sem_logs_1);
 
     // Main loop
     while (1)
     {
         // Wait for the new message to arrive
-        sem_wait(sem_logs);
+        sem_wait(sem_logs_2);
 
         // Write the message
         write_to_file(log_file, ptr_logs);
@@ -52,14 +69,13 @@ int main(int argc, char *argv[])
         // clear the ptr
         ptr_logs = "";
 
-        // unlock semaphore for other processes
-        sem_post(sem_logs);
+        // inform that you have finished writing
+        sem_post(sem_logs_3);
     }
 
-    // close all connections
-    sem_close(sem_logs);
-    // unlink semaphores
-    sem_unlink(SEMAPHORE_LOGS);
+    sem_close(sem_logs_1);         // close all connections
+    sem_close(sem_logs_2);         // close all connections
+    sem_close(sem_logs_3);
     // close fd
     close(shm_logs);
     // Close the file
@@ -76,7 +92,12 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     {
         printf("Caught SIGINT \n");
         // close all semaphores
-        sem_close(sem_logs);
+        sem_close(sem_logs_1);         // close all connections
+        sem_close(sem_logs_2);         // close all connections
+
+        sem_unlink(SEMAPHORE_LOGS_1);        // unlink semaphores
+        sem_unlink(SEMAPHORE_LOGS_2);        // unlink semaphores
+        sem_unlink(SEMAPHORE_LOGS_3);        // unlink semaphores
         // Close the file
         fclose(logfile);
 
@@ -99,7 +120,7 @@ void write_to_file(FILE *fp, char *msg)
 {
     int process_symbol;
     int msg_type;
-    char *msg_content, *who, *what;
+    char msg_content[80], who[80], what[80];
     sscanf(msg, "%i|%i|%s", &process_symbol, &msg_type, msg_content);
 
     // decide who gave you the message
@@ -144,7 +165,7 @@ void write_to_file(FILE *fp, char *msg)
     fprintf(fp, "[%s] %s: %s", who, what, msg_content);
 }
 
-void create_logfile(FILE *fp)
+void create_logfile_name(char *path_file)
 {
     // Get current time
     time_t current_time;
@@ -157,15 +178,7 @@ void create_logfile(FILE *fp)
     // Format time into a string: "logfile_YYYYMMDD_HHMMSS.txt"
     strftime(filename, sizeof(filename), "logfile_%Y%m%d_%H%M%S.txt", time_info);
 
-    char path_file[256];
     char directory[] = "build/logs";
     sprintf(path_file, "%s/%s", directory, filename);
 
-    // create log file
-    fp = fopen(path_file, "a");
-    if (logfile == NULL)
-    {
-        perror("Unabale to open the log file");
-        exit(1);
-    }
 }

@@ -21,7 +21,9 @@
 
 // Shared memory key for LOGS
 #define SHAREMEMORY_LOGS "/shared_logs"
-#define SEMAPHORE_LOGS "/my_semaphore_4"
+#define SEMAPHORE_LOGS_1 "/my_semaphore_logs_1"
+#define SEMAPHORE_LOGS_2 "/my_semaphore_logs_2"
+#define SEMAPHORE_LOGS_3 "/my_semaphore_logs_3"
 
 // Pipes Constants
 #define MSG_LEN 240
