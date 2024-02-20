@@ -1,18 +1,20 @@
 #include "main.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+
 #include <sys/wait.h>
 #include <sys/types.h>
-
 #include <signal.h>
 
-// Pipes file descriptors
+// Serverless pipes (fd)
 int key_pressing_des[2];
 int lowest_target_des[2];
 
+// New pipes working with server (fd)
 int km_server[2];
 int server_drone[2];
 int interface_server[2];

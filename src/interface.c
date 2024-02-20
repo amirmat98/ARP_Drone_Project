@@ -25,7 +25,6 @@ int key_press_des_write;
 int lowest_target_des_write;
 
 // Pipes working with the server
-// int interface_server[2];
 int server_interface[2];
 
 int main(int argc, char *argv[])
@@ -117,7 +116,7 @@ int main(int argc, char *argv[])
             }
             // Send data
             char screen_msg[MSG_LEN];
-            sprintf(screen_msg, "I2:%d,%d", screen_size_x, screen_size_y);
+            sprintf(screen_msg, "I2:%.3f,%.3f", (float)screen_size_x, (float)screen_size_y);
             write_to_pipe(server_interface[1], screen_msg);
             // Re-scale the targets on the screen
             if (iteration > 0 && obtained_targets == 1)
@@ -363,14 +362,19 @@ void remove_target(Targets *targets, int *number_targets, int index_to_remove)
 void parse_obstacles_message(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
 {
     int total_obstacles;
-    sscanf(obstacles_msg, "0[%d]", &total_obstacles);
+    sscanf(obstacles_msg, "O[%d]", &total_obstacles);
 
     char *token = strtok(obstacles_msg + 4, "|");
     *number_obstacles = 0;
 
     while (token != NULL && *number_obstacles < total_obstacles)
     {
-        sscanf(token, "%d , %d", &obstacles[*number_obstacles].x, &obstacles[*number_obstacles].y);
+        float x_float, y_float;
+        sscanf(token, "%f,%f", &x_float, &y_float);
+         // Convert float to int (rounding is acceptable)
+        obstacles[*number_obstacles].x = (int)(x_float + 0.5);
+        obstacles[*number_obstacles].y = (int)(y_float + 0.5);
+
         obstacles[*number_obstacles].total = *number_obstacles + 1;
 
         token = strtok(NULL, "|");
@@ -386,13 +390,18 @@ void parse_target_message(char *targets_msg, Targets *targets, int *number_targe
 
     while (token != NULL)
     {
-        // Targets x,y will change throughout execution
-        sscanf (token, "%d , %d", &targets[*number_targets].x, &targets[*number_targets].y);
+        float x_float, y_float;
+        sscanf(token, "%f,%f", &x_float, &y_float);
+
+        // Convert float to int (rounding is acceptable)
+        targets[*number_targets].x = (int)(x_float + 0.5);
+        targets[*number_targets].y = (int)(y_float + 0.5);
         targets[*number_targets].ID = *number_targets + 1;
 
-        // To save the original values
-        sscanf(token, "%d,%d", &original_targets[*number_targets].x, &original_targets[*number_targets].y);
-        original_targets[*number_targets].ID = *number_targets + 1;
+        // Save original values
+        original_targets[*number_targets].x = targets[*number_targets].x;
+        original_targets[*number_targets].y = targets[*number_targets].y;
+        original_targets[*number_targets].ID = targets[*number_targets].ID;
 
         // Handle token
         token = strtok(NULL, "|");

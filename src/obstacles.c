@@ -1,6 +1,6 @@
 #include "obstacles.h"
-#include "constants.h"
 #include "util.h"
+#include "constants.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,11 +10,14 @@
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/select.h>
-#include <sys/stat.h>
 
+#include <semaphore.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <errno.h>
 
 
 // Pipes working with the server
@@ -68,7 +71,10 @@ int main(int argc, char *argv[])
             ssize_t bytes_read = read(server_obstacles[0], server_msg, MSG_LEN);
             if (bytes_read > 0) 
             {
-                sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
+                float temp_scx, temp_scy;
+                sscanf(server_msg, "I2:%f,%f", &temp_scx, &temp_scy);
+                screen_size_x = (int)temp_scx;
+                screen_size_y = (int)temp_scy;
                 printf("Obtained from server: %s\n", server_msg);
                 fflush(stdout);
                 obtained_dimensions = 1;
@@ -125,13 +131,12 @@ int main(int argc, char *argv[])
 void print_obstacles(Obstacle obstacles[], int number_obstacles, char obstacles_msg[])
 {
     // Append the letter O and the total number of obstacles to obstacles_msg
-    sprintf(obstacles_msg, "0[%d]", number_obstacles);
+    sprintf(obstacles_msg, "O[%d]", number_obstacles);
 
     for (int i = 0; i < number_obstacles; i++)
     {
         // Append obstacle information to obstacles_msg
-        sprintf(obstacles_msg + strlen(obstacles_msg), "%d, %d", obstacles[i].x, obstacles[i].y);
-
+        sprintf(obstacles_msg + strlen(obstacles_msg), "%.3f,%.3f", (float)obstacles[i].x, (float)obstacles[i].y);
         // Add a separator if there are more obstacles
         if (i < number_obstacles - 1)
         {

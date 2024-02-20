@@ -345,14 +345,14 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
 void parse_obstacles_msg(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles)
 {
     int total_obstacles;
-    sscanf(obstacles_msg, "0[%d]", &total_obstacles);
+    sscanf(obstacles_msg, "O[%d]", &total_obstacles);
 
     char *token = strtok(obstacles_msg + 4, "|");
     *number_obstacles = 0;
 
     while (token != NULL && *number_obstacles < total_obstacles)
     {
-        sscanf(token, "%d , %d", &obstacles[*number_obstacles].x, &obstacles[*number_obstacles].y);
+        sscanf(token, "%d,%d", &obstacles[*number_obstacles].x, &obstacles[*number_obstacles].y);
         obstacles[*number_obstacles].total = *number_obstacles + 1;
 
         token = strtok(NULL, "|");

@@ -201,11 +201,11 @@ char* determine_action(int pressed_key)
     }
     if ( key == 'R')
     {
-        x = 900;    // Special value interpreted by drone.c process
+        x = 10;    // Special value interpreted by drone.c process
         y = 0;
         // sprintf(shared_action, "%d,%d", x, y);
         // return "STOP";
-        return "900,0";
+        return "10,0";
     }
     else
     {

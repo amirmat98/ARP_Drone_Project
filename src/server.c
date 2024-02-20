@@ -33,15 +33,9 @@ int targets_server[2];
 // GLOBAL VARIABLES
 // Attach to shared memory for key presses
 void *ptr_wd;                           // Shared memory for WD
-void *ptr_key;                          // Shared memory for Key pressing
-void *ptr_pos;                          // Shared memory for Drone Position
-void *ptr_action;                       // Shared memory ptr for actions
-void *ptr_logs;
+void *ptr_logs;                         // Shared memory ptr for logs
 
 
-sem_t *sem_key;                         // Semaphore for key presses
-sem_t *sem_pos;                         // Semaphore for drone positions
-sem_t *sem_action;                      // Semaphore for actions
 sem_t *sem_logs_1;
 sem_t *sem_logs_2;
 sem_t *sem_logs_3;
@@ -51,6 +45,8 @@ sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
 
 int main(int argc, char *argv[])
 {
+
+    clean_up();
     
     get_args(argc, argv);
 
@@ -118,7 +114,10 @@ int main(int argc, char *argv[])
     //Main loop
     while(1)
     {
+        //////////////////////////////////////////////////////
         /* Handle pipe from key_manager.c */
+        /////////////////////////////////////////////////////
+
         fd_set read_km;
         FD_ZERO(&read_km);
         FD_SET(km_server[0], &read_km);
@@ -147,7 +146,10 @@ int main(int argc, char *argv[])
             }
         }
 
+        //////////////////////////////////////////////////////
         /* Handle pipe from interface.c */
+        /////////////////////////////////////////////////////
+
         fd_set read_interface;
         FD_ZERO(&read_interface);
         FD_SET(interface_server[0], &read_interface);
@@ -182,7 +184,10 @@ int main(int argc, char *argv[])
             }
         }
 
+        //////////////////////////////////////////////////////
         /* Handle pipe from drone.c */
+        /////////////////////////////////////////////////////
+
         fd_set read_drone;
         FD_ZERO(&read_interface);
         FD_SET(drone_server[0], &read_drone);
@@ -216,7 +221,10 @@ int main(int argc, char *argv[])
             }
         }
 
+        //////////////////////////////////////////////////////
         /* Handle pipe from obstacles.c */
+        /////////////////////////////////////////////////////
+
         fd_set read_obstacles;
         FD_ZERO(&read_obstacles);
         FD_SET(obstacles_server[0], &read_obstacles);
@@ -252,7 +260,10 @@ int main(int argc, char *argv[])
             }
         }
 
+        //////////////////////////////////////////////////////
         /* Handle pipe from targets.c */
+        /////////////////////////////////////////////////////
+
         fd_set read_targets;
         FD_ZERO(&read_targets);
         FD_SET(targets_server[0], &read_targets);
@@ -344,32 +355,21 @@ void *create_shm(char *name)
 void clean_up()
 {
     // close all connections
-    sem_close(sem_key);
-    sem_close(sem_pos);
-    sem_close(sem_action);
     sem_close(sem_wd_1);
     sem_close(sem_wd_2);
     sem_close(sem_wd_3);
 
     // unlink semaphores
-    sem_unlink(SEMAPHORE_KEY);
-    sem_unlink(SEMAPHORE_POSITION);
-    sem_unlink(SEMAPHORE_ACTION);
     sem_unlink(SEMAPHORE_WD_1);
     sem_unlink(SEMAPHORE_WD_2);
     sem_unlink(SEMAPHORE_WD_3);
 
     // unmap shared memory
     munmap(ptr_wd, SIZE_SHM);
-    munmap(ptr_key, SIZE_SHM);
-    munmap(ptr_pos, SIZE_SHM);
-    munmap(ptr_action, SIZE_SHM);
+
 
     // unlink shared memories
     shm_unlink(SHAREMEMORY_WD);
-    shm_unlink(SHAREMEMORY_KEY);
-    shm_unlink(SHAREMEMORY_POSITION);
-    shm_unlink(SHAREMEMORY_ACTION);
 
     printf("Clean up has been performed succesfully\n");
 }
