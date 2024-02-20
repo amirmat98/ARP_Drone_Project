@@ -1,7 +1,7 @@
 # Assignment 2
 This assignment represents the first part of the project for Advanced and Robot Programming course on UniGe in the winter semester 2023/2024. 
 
-AmirMahdi Matin - s5884715
+Amir Mahdi Matin - s5884715
 
 ## Installation & Usage
 For project's configuration we have used `Makefile`.
