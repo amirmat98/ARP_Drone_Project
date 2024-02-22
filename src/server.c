@@ -387,5 +387,3 @@ void clean_up()
 
     printf("Clean up has been performed succesfully\n");
 }
-
-void handle_pipe_input()
