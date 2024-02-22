@@ -110,24 +110,10 @@ int main(int argc, char *argv[])
     // To compare current and previous data
     char prev_drone_msg[MSG_LEN] = "";
 
-    fd_set reader;
-    fd_set master;
-
-    FD_ZERO(&reader);
-    FD_ZERO(&master);
-
-    FD_SET(km_server[0], &master);
-    FD_SET(interface_server[0], &master);
-    FD_SET(drone_server[0], &master);
-    FD_SET(obstacles_server[0], &master);
-    FD_SET(targets_server[0], &master);
-
-
 
     //Main loop
     while(1)
     {
-
         //////////////////////////////////////////////////////
         /* Handle pipe from key_manager.c */
         /////////////////////////////////////////////////////
@@ -387,5 +373,3 @@ void clean_up()
 
     printf("Clean up has been performed succesfully\n");
 }
-
-void handle_pipe_input()
