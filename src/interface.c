@@ -59,15 +59,13 @@ int main(int argc, char *argv[])
     int screen_size_x;
     int screen_size_y;
     getmaxyx(stdscr, screen_size_y, screen_size_x);
-
-    // Initial drone position will be the middle of the screen.
-    Drone drone;
-    drone.position_x = screen_size_x / 2;
-    drone.position_y = screen_size_y / 2;
+     // Initial drone position will be the middle of the screen.
+    int drone_x = screen_size_x / 2;
+    int drone_y = screen_size_y / 2;
 
     // Write the initial position and screen size data into the server
     char initial_msg[MSG_LEN];
-    sprintf(initial_msg, "I1:%d,%d,%d,%d", drone.position_x, drone.position_y, screen_size_x, screen_size_y);
+    sprintf(initial_msg, "I1:%d,%d,%d,%d", drone_x, drone_y, screen_size_x, screen_size_y);
     write_to_pipe(server_interface[1], initial_msg);
 
 
@@ -161,7 +159,7 @@ int main(int argc, char *argv[])
         {
             if (server_msg[0] == 'D')
             {
-                sscanf(server_msg, "D:%d,%d", &drone.position_x, &drone.position_y);
+                sscanf(server_msg, "D:%d,%d", &drone_x, &drone_y);
             }
             else if (server_msg[0] == 'O')
             {
@@ -202,7 +200,7 @@ int main(int argc, char *argv[])
         // Send to drone w/ serverless pipe lowest_target
         write_to_pipe(lowest_target_des_write, lowest_target);
 
-        if (targets[lowest_index].x == drone.position_x && targets[lowest_index].y == drone.position_y) 
+        if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
             // Update score and counter (reset timer)
             if (counter > 2000) 
@@ -227,7 +225,7 @@ int main(int argc, char *argv[])
         }
 
         // Check if the drone has crashed into an obstacle
-        if (check_collision_drone_obstacle(obstacles, number_obstacles, drone.position_x, drone.position_y))
+        if (check_collision_drone_obstacle(obstacles, number_obstacles, drone_x, drone_y))
         {
             // Update score
             score -= 5;
@@ -241,7 +239,7 @@ int main(int argc, char *argv[])
         sprintf(score_msg, "Your current score: %d", score);
 
         // Draws the window with the updated information of the terminal size, drone, targets, obstacles and score.
-        draw_window(drone.position_x, drone.position_y, targets, number_targets, obstacles, number_obstacles, score_msg);
+        draw_window(drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
 
         /* HANDLE THE KEY PRESSED BY THE USER */
         int ch;
@@ -427,7 +425,6 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
 void draw_final_window(int score)
 {
     clear();
-    int counter_timer = 5;
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
     box(stdscr, 0, 0);
@@ -437,14 +434,11 @@ void draw_final_window(int score)
     int center_x = (max_x - 40) / 2;  // Adjusted for a message of length 30
     // Print the message at the center of the screen
     mvprintw(center_y, center_x, "Thank you for playing! Your final score is: %d", score);
-    for (int i = 0; i < counter_timer; i++)
-    {
-        mvprintw(center_y + 2, center_x, "This window will close automatically in %d seconds", counter_timer - i);
-        // Refresh the screen to show the changes
-        refresh();
-        // Wait for user input before exiting
-        sleep(1);
-    }
+    mvprintw(center_y + 2, center_x, "This window will close automatically in 5 seconds");
+    // Refresh the screen to show the changes
+    refresh();
+    // Wait for user input before exiting
+    sleep(5);
     // Cleanup, close ncurses and exit.
     endwin();
 }
