@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include <signal.h>
 #include "constants.h"
+#include "drone.h"
 
 int find_lowest_ID(Targets *targets, int number_targets);
 
