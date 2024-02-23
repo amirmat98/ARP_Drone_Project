@@ -127,8 +127,8 @@ int main(int argc, char *argv[])
 
 void generate_random_cordinates(int sector_width, int sector_height, int *x, int *y)
 {
-    *x = rand() % sector_width;
-    *y = rand() % sector_height;
+    *x = (int)(0.05 * sector_width) + (rand() % (int)(0.95 * sector_width));
+    *y = (int)(0.05 * sector_height) + (rand() % (int)(0.95 * sector_height));
 }
 
 void get_args(int argc, char *argv[])

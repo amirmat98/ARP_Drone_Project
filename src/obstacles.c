@@ -85,6 +85,8 @@ int main(int argc, char *argv[])
             {
                 // Process the message received from the server.
                 receive_message_from_server(buffer_server, &screen_size_x, &screen_size_y);
+                printf("Screen size: %d x %d\n", screen_size_x, screen_size_y);
+                printf("-----------------------------------\n");
                 // Indicate that the screen dimensions have been received.
                 obtained_dimensions = true;
             }
@@ -152,19 +154,20 @@ void get_args(int argc, char *argv[])
 
 void receive_message_from_server(char *message, int *x, int *y)
 {
+    printf("Obtained from server: %s\n", message);
     float temp_scx, temp_scy;
     sscanf(message, "I2:%f,%f", &temp_scx, &temp_scy);
     *x = (int)temp_scx;
     *y = (int)temp_scy;
-    printf("Obtained from server: %s\n", message);
+    // printf("Screen size: %d x %d\n", *x, *y);
     fflush(stdout);
 }
 
 Obstacle generate_obstacle(int x, int y)
 {
     Obstacle obstacle;
-    obstacle.x = rand() % (x-10);
-    obstacle.y = rand() % (y-10);
+    obstacle.x = (int)(0.05 * x) + (rand() % (int)(0.95 * x));
+    obstacle.y = (int)(0.05 * y) + (rand() % (int)(0.95 * y));
     obstacle.spawn_time = time(NULL) + (rand() % (MAX_SPAWN_TIME - MIN_SPAWN_TIME + 1) + MIN_SPAWN_TIME);
     return obstacle;
 }
