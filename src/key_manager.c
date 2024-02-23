@@ -19,7 +19,7 @@
 #include <semaphore.h>
 #include <errno.h>
 
-
+// Global variables for pipe descriptors to handle inter-process communication
 // Pipes working with the server
 int key_pressing_read;
 // Pipes working with the server
@@ -27,18 +27,20 @@ int km_server_write;
 
 int main(int argc, char *argv[])
 {
-
+    // Initialize the program by parsing command line arguments
     get_args(argc, argv);
 
+    // Set up signal handling for SIGINT and SIGUSR1
     struct sigaction sa;
-    sa.sa_sigaction = signal_handler; 
-    sa.sa_flags = SA_SIGINFO;
-    sigaction (SIGINT, &sa, NULL);
-    sigaction (SIGUSR1, &sa, NULL);
+    sa.sa_sigaction = signal_handler; // Signal handler function
+    sa.sa_flags = SA_SIGINFO;   // Use sa_sigaction instead of sa_handler
+    sigaction (SIGINT, &sa, NULL);  // Register signal handler for SIGINT
+    sigaction (SIGUSR1, &sa, NULL); // Register signal handler for SIGUSR1
 
+    // Publish this process's PID to the watchdog using a utility function
     publish_pid_to_wd(KM_SYM, getpid());
 
- 
+    // Main loop to process key presses indefinitely
     while(1)
     {
         /*THIS SECTION IS FOR OBTAINING THE KEY INPUT CHARACTER*/
@@ -58,9 +60,8 @@ int main(int argc, char *argv[])
 
         // Read from the file descriptor
         int pressed_key = read_key_from_pipe(key_pressing_read);
-        // char msg_pressed_key[240];
-        /*s*/printf(/*msg_pressed_key,*/"Pressed key: %c\n", (char)pressed_key);
-        // log_msg(msg_pressed_key);
+        printf("Pressed key: %c\n", (char)pressed_key); // Display the pressed key
+
 
         /*THIS SECTION IS FOR DRONE ACTION DECISION*/
 
@@ -68,36 +69,36 @@ int main(int argc, char *argv[])
         // printf("Action sent to drone: %s\n\n", action);
         fflush(stdout);
 
-        // TEMPORAL/DELETE AFTER: TESTING DATA SENT TO PIPE ACTION
+        /*
         char key = toupper(pressed_key);
         int x; int y;
         // char action_msg[20];
+        */
 
-        if ( action != "None")
+        // If the action is not "None", send it to the server
+        if (strcmp(action, "None") != 0) 
         {
-            write_to_pipe (km_server_write, action);
-            // printf("Wrote action message: %s into pipe\n", action);
-            // char msg[MSG_LEN];
-            /*s*/printf(/*msg,*/"Wrote action message: %s into pipe\n", action);
-            // log_msg(msg);
-        }        
+            write_to_pipe(km_server_write, action);
+            printf("Action sent to server: %s\n", action);
+        }         
     }
 
     return 0;
 
 }
 
+// Function to read a single character from a pipe
 int read_key_from_pipe (int pipe_des)
 {
-    char msg[MSG_LEN];
+    char msg[MSG_LEN];  // Buffer to hold the message
 
-    ssize_t bytes_read = read(pipe_des, msg, sizeof(msg));
+    ssize_t bytes_read = read(pipe_des, msg, sizeof(msg));  // Read from the pipe
 
-    // printf("succesfully read from window\n");
     int pressed_key = msg[0];
-    return pressed_key;
+    return pressed_key; // Return the first character read
 }
 
+// Parse the command line arguments to get pipe descriptors
 void get_args(int argc, char *argv[])
 {
     sscanf(argv[1], "%d %d", &key_pressing_read, &km_server_write);
@@ -125,95 +126,30 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 }
 
 
-// US Keyboard assumed
-char* determine_action(int pressed_key)
+// Determine the action string based on the pressed key
+char* determine_action(int pressed_key) 
 {
+    // Convert the pressed key to uppercase to handle both cases
     char key = toupper(pressed_key);
-    int x; int y;
-    // char action_msg[20];
-
-    // Disclaimer: Y axis is inverted on tested terminal.
-    if ( key == 'W')
+    // Switch on the uppercase character to determine the action
+    switch (key) 
     {
-        x = 0;    // Movement on the X axis.
-        y = -1;    // Movement on the Y axis.
-        //sprintf(shared_action, "%d,%d", x, y);
-        // sprintf(action_msg, "%d, %d", x, y);
-        // write_to_pipe(action_des[1], action_msg);
-        // return "UP";
-        return "0,-1";
-    }
-    if ( key == 'S')
-    {
-        x = 0;    // Movement on the X axis.
-        y = 1;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "DOWN";
-        return "0,1";
-    }
-    if ( key == 'A')
-    {
-        x = -1;    // Movement on the X axis.
-        y = 0;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "LEFT";
-        return "-1,0";
-    }
-    if ( key == 'D')
-    {
-        x = 1;    // Movement on the X axis.
-        y = 0;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "RIGHT";
-        return "1,0";
-    }
-    if ( key == 'Q')
-    {
-        x = -1;    // Movement on the X axis.
-        y = -1;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "UP-LEFT";
-        return "-1,-1";
-    }
-    if ( key == 'E')
-    {
-        x = 1;    // Movement on the X axis.
-        y = -1;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "UP-RIGHT";
-        return "1,-1";
-    }
-    if ( key == 'Z')
-    {
-        x = -1;    // Movement on the X axis.
-        y = 1;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "DOWN-LEFT";
-        return "-1,1";
-    }
-    if ( key == 'C')
-    {
-        x = 1;    // Movement on the X axis.
-        y = 1;    // Movement on the Y axis.
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "DOWN-RIGHT";
-        return "1,1";
-    }
-    if ( key == 'R')
-    {
-        x = 10;    // Special value interpreted by drone.c process
-        y = 0;
-        // sprintf(shared_action, "%d,%d", x, y);
-        // return "STOP";
-        return "10,0";
-    }
-    else
-    {
-        return "None";
+        case 'W': return "0,-1";
+        case 'X': return "0,1";
+        case 'A': return "-1,0";
+        case 'D': return "1,0";
+        case 'Q': return "-1,-1";
+        case 'E': return "1,-1";
+        case 'Z': return "-1,1";
+        case 'C': return "1,1";
+        case 'S': return "10,0";
+        default: return "None"; // If norecognized key, return "None" indicating no action
     }
 }
 
+// Utility function to log a message with a given log level
 void log_msg(char *msg)
 {
+    // Sends a message to logger with the 'INFO' log level
     write_message_to_logger(KM_SYM, INFO, msg);
 }
