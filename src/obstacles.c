@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/select.h>
+#include <stdbool.h>
 
 #include <semaphore.h>
 #include <signal.h>
@@ -30,8 +31,11 @@ int main(int argc, char *argv[])
 {
     get_args(argc, argv);
 
+    // Seed the random number generator
     srand(time(NULL));
+
     Obstacle obstacles[MAX_OBSTACLES];
+
     int number_obstacles = 0;
     char obstacles_msg[MSG_LEN]; // Adjust the size based on your requirements
 
@@ -41,7 +45,7 @@ int main(int argc, char *argv[])
     timeout.tv_usec = 0;
 
     // To compare previous values
-    int obtained_dimensions = 0;
+    bool obtained_dimensions = false;
 
 
     // Variables
@@ -50,74 +54,67 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-       //////////////////////////////////////////////////////
-        /* SECTION 1: READ THE DATA FROM SERVER*/
+        //////////////////////////////////////////////////////
+        /* Step 1: READ THE DATA FROM SERVER*/
         /////////////////////////////////////////////////////
 
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(server_obstacles[0], &read_fds);
+        // Initialize a set to track read events.
+        fd_set active_read_set;
+        // Clear all entries from the set.
+        FD_ZERO(&active_read_set);
+        // Add the first server obstacle's file descriptor to the set.
+        FD_SET(server_obstacles[0], &active_read_set);
 
-        char server_msg[MSG_LEN];
+        // Buffer to store the server's message.
+        char buffer_server[MSG_LEN];
 
-        int ready = select(server_obstacles[0] + 1, &read_fds, NULL, NULL, &timeout);
-        if (ready == -1) 
+        // Wait for any of the file descriptors to be ready for reading, or for a timeout.
+        int num_fds_ready = select(server_obstacles[0] + 1, &active_read_set, NULL, NULL, &timeout);
+        if (num_fds_ready == -1) 
         {
-            perror("Error in select");
+            // Log an error if select fails.
+            perror("Select encountered an error");
         }
 
-        if (ready > 0 && FD_ISSET(server_obstacles[0], &read_fds)) 
+        // Check if there's data to read from the first server obstacle.
+        if (num_fds_ready > 0 && FD_ISSET(server_obstacles[0], &active_read_set)) 
         {
-            ssize_t bytes_read = read(server_obstacles[0], server_msg, MSG_LEN);
-            if (bytes_read > 0) 
+            // Read data into the buffer.
+            ssize_t count_bytes = read(server_obstacles[0], buffer_server, MSG_LEN);
+            if (count_bytes > 0) 
             {
-                float temp_scx, temp_scy;
-                sscanf(server_msg, "I2:%f,%f", &temp_scx, &temp_scy);
-                screen_size_x = (int)temp_scx;
-                screen_size_y = (int)temp_scy;
-                printf("Obtained from server: %s\n", server_msg);
-                fflush(stdout);
-                obtained_dimensions = 1;
+                // Process the message received from the server.
+                receive_message_from_server(buffer_server, &screen_size_x, &screen_size_y);
+                // Indicate that the screen dimensions have been received.
+                obtained_dimensions = true;
             }
         }
-        if(obtained_dimensions == 0)
+        // Continue the loop if the screen dimensions have not been obtained yet.
+        if(!obtained_dimensions)
         {
             continue;
         }
 
         //////////////////////////////////////////////////////
-        /* SECTION 2: OBSTACLES GENERATION & SEND DATA */
+        /* Step 2: OBSTACLES GENERATION & SEND DATA */
         /////////////////////////////////////////////////////
 
-        // Check if it's time to spawn a new obstacle
+
         if (number_obstacles < MAX_OBSTACLES) 
         {
-            Obstacle new_obstacle;
-            new_obstacle.x = rand() % screen_size_x;
-            new_obstacle.y = rand() % screen_size_y;
-            new_obstacle.spawnTime = time(NULL) + (rand() % (MAX_SPAWN_TIME - MIN_SPAWN_TIME + 1) + MIN_SPAWN_TIME);
-            obstacles[number_obstacles] = new_obstacle;
+            obstacles[number_obstacles] = generate_obstacle(screen_size_x, screen_size_y);
             number_obstacles++;
         }
 
-        // Print obstacles every second
+
         obstacles_msg[0] = '\0'; // Clear the string
-        // Instead of print, this string should be sent to server.c
+
         print_obstacles(obstacles, number_obstacles, obstacles_msg);
+
         sleep(WAIT_TIME);
 
         // Check if any obstacle has exceeded its spawn time
-        time_t currentTime = time(NULL);
-        for (int i = 0; i < number_obstacles; ++i) 
-        {
-            if (obstacles[i].spawnTime <= currentTime) 
-            {
-                // Replace the obstacle with a new one
-                obstacles[i].x = rand() % screen_size_x;
-                obstacles[i].y = rand() % screen_size_y;
-                obstacles[i].spawnTime = time(NULL) + (rand() % (MAX_SPAWN_TIME - MIN_SPAWN_TIME + 1) + MIN_SPAWN_TIME);
-            }
-        }
+        check_obstacles_spawn_time(obstacles, number_obstacles, screen_size_x, screen_size_y);
 
         // SEND DATA TO SERVER
         write_to_pipe(obstacles_server[1],obstacles_msg);
@@ -151,4 +148,36 @@ void print_obstacles(Obstacle obstacles[], int number_obstacles, char obstacles_
 void get_args(int argc, char *argv[])
 {
     sscanf(argv[1], "%d %d", &server_obstacles[0], &obstacles_server[1]);
+}
+
+void receive_message_from_server(char *message, int *x, int *y)
+{
+    float temp_scx, temp_scy;
+    sscanf(message, "I2:%f,%f", &temp_scx, &temp_scy);
+    *x = (int)temp_scx;
+    *y = (int)temp_scy;
+    printf("Obtained from server: %s\n", message);
+    fflush(stdout);
+}
+
+Obstacle generate_obstacle(int x, int y)
+{
+    Obstacle obstacle;
+    obstacle.x = rand() % (x-10);
+    obstacle.y = rand() % (y-10);
+    obstacle.spawn_time = time(NULL) + (rand() % (MAX_SPAWN_TIME - MIN_SPAWN_TIME + 1) + MIN_SPAWN_TIME);
+    return obstacle;
+}
+
+void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int x, int y)
+{
+    time_t currentTime = time(NULL);
+    for (int i = 0; i < number_obstacles; ++i)
+    {
+        if (obstacles[i].spawn_time <= currentTime)
+        {
+            // Replace the obstacle with a new one
+            obstacles[i] = generate_obstacle(x, y);
+        }
+    }
 }
