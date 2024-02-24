@@ -83,3 +83,9 @@ void write_message_to_logger(int who, int type, char *msg)
     sem_close(sem_logs_2);
     sem_close(sem_logs_3);
 }
+
+void error(char *msg)
+{
+    perror(msg);
+    //exit(0);
+}

@@ -13,7 +13,11 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/select.h>
-#include <stdbool.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h> 
+#include <sys/time.h>
 
 #include <semaphore.h>
 #include <signal.h>
@@ -26,16 +30,15 @@ int server_obstacles[2];
 int obstacles_server[2];
 
 
-
 int main(int argc, char *argv[])
 {
+    sleep(1);
     get_args(argc, argv);
 
     // Seed the random number generator
     srand(time(NULL));
 
     Obstacle obstacles[MAX_OBSTACLES];
-
     int number_obstacles = 0;
     char obstacles_msg[MSG_LEN]; // Adjust the size based on your requirements
 
@@ -51,6 +54,48 @@ int main(int argc, char *argv[])
     // Variables
     int screen_size_x; 
     int screen_size_y;
+
+    //////////////////////////////////////////////////////
+    /* SOCKET INITIALIZATION */
+    /////////////////////////////////////////////////////
+
+    int socket_fd;
+    int prot_number;
+    int n;
+
+    struct sockaddr_in server_address;
+    struct hostent *server_host;
+
+    prot_number = 2000; // Port number
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+    {
+        perror("Error opening socket");
+        // exit(1);
+    }
+    server = gethostbyname("localhost");
+    if (server == NULL)
+    {
+        fprintf(stderr, "Error, no host named 'localhost'.\n");
+    }
+
+    bzero((char *) &server_address, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
+    server_address.sin_port = htons(prot_number);
+    if (connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+    {
+        perror("Error connecting");
+        // exit(1);
+    }
+
+    //////////////////////////////////////////////////////
+    /* IDENTIFICATION WITH SERVER */
+    /////////////////////////////////////////////////////
+
+    char msg[MSG_LEN]; // Adjust the size based on your requirements
+    strcpy(msg, "OI");
+    write_message_and_wait_for_echo(socket_fd, msg);
 
     while (1)
     {
@@ -183,4 +228,148 @@ void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int 
             obstacles[i] = generate_obstacle(x, y);
         }
     }
+}
+
+char* read_and_echo(int socket)
+{
+    int n1, n2;
+    static char buffer[MSG_LEN];
+    bzero(buffer, MSG_LEN);
+
+    // Read the message from the socket.
+    n1 = read(socket, buffer, MSG_LEN - 1);
+    if (n1 < 0)
+    {
+        perror("Error reading from socket");
+        // exit(1);
+    }
+    printf("Message from server: %s\n", buffer);
+
+    // Echo data back to the socket.
+    n2 = write(socket, buffer, n1);
+    if (n2 < 0)
+    {
+        perror("Error writing to socket");
+        // exit(1);
+    }
+
+    return buffer;
+
+}
+char* read_and_echo_non_blocking(int socket)
+{
+    static char buffer[MSG_LEN];
+    fd_set active_read_set;
+    struct timeval timeout;
+    int n1, n2;
+    int ready;
+
+    // clear the buffer
+    bzero(buffer, MSG_LEN);
+
+    // Initialize the set of file descriptors to monitor.
+    FD_ZERO(&active_read_set);
+    FD_SET(socket, &active_read_set);
+
+    // Set the timeout for select.
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    // Use select to wait for data to become available.
+    ready = select(socket + 1, &active_read_set, NULL, NULL, &timeout);
+    if (ready < 0)
+    {
+        perror("Error in select");
+        // exit(1);
+    }
+    else if (ready == 0)
+    {
+        printf("No data available\n");
+        return NULL;
+    }
+
+    // Data is available, read it from socket.
+    n1 = read(socket, buffer, MSG_LEN - 1);
+    if (n1 < 0)
+    {
+        perror("Error reading from socket");
+        // exit(1);
+    }
+    else if (n1 == 0)
+    {
+        printf("Connection closed\n");
+        return NULL;
+    }
+
+    // Pritn the message from the socket.
+    printf("Message from server: %s\n", buffer);
+
+    // Echo data back to the socket.
+    n2 = write(socket, buffer, n1);
+    if (n2 < 0)
+    {
+        perror("Error writing to socket");
+        // exit(1);
+    }
+
+    return buffer;
+
+}
+
+void write_message_and_wait_for_echo(int socket, char *message)
+{
+    static char buffer[MSG_LEN];
+    fd_set read_set;
+    struct timeval timeout;
+    int n1, n2;
+    int ready;
+
+    n2 = write(socket, message, sizeof(message));
+    if (n1 < 0)
+    {
+        perror("Error writing to socket");
+        // exit(1);
+    }
+    printf("Message sent to server: %s\n", message);
+
+    // Clear the buffer
+    bzero(buffer, MSG_LEN);
+
+    // Initialize the set of file descriptors to monitor.
+    FD_ZERO(&read_set);
+    FD_SET(socket, &read_set);
+
+    // Set the timeout for select.
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 300000;
+
+    // Use select to wait for data to become available.
+    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
+    if (ready < 0)
+    {
+        perror("Error in select");
+        // exit(1);
+    }
+    else if (ready == 0)
+    {
+        printf("Timeout from server. Connection lost!");
+        return;
+        // No data available
+    }
+
+    // Data is available, read it from socket.
+    n1 = read(socket, buffer, MSG_LEN - 1);
+    if (n1 < 0)
+    {
+        perror("Error reading from socket");
+        // exit(1);
+    }
+    else if (n1 == 0)
+    {
+        printf("Connection closed\n");
+        return;
+    } // Connection closed
+
+    // Pritn the message from the socket.
+    printf("Message from server: %s\n", buffer);
 }

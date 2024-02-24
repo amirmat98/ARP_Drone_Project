@@ -3,8 +3,8 @@
 
 // User-defined parameters
 #define MAX_OBSTACLES 7
-#define MIN_SPAWN_TIME 4
-#define MAX_SPAWN_TIME 10
+#define MIN_SPAWN_TIME 8
+#define MAX_SPAWN_TIME 15
 #define WAIT_TIME 1 // How often a new obstacle is created (if the number is below MAX_OBSTACLES)
 
 
@@ -33,5 +33,10 @@ void receive_message_from_server(char *message, int *x, int *y);
 Obstacle generate_obstacle(int x, int y);
 
 void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int x, int y);
+
+char* read_and_echo(int socket);
+char* read_and_echo_non_blocking(int socket);
+
+void write_message_and_wait_for_echo(int socket, char *message);
 
 #endif // OBSTACLES_H

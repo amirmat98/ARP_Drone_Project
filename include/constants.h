@@ -26,7 +26,7 @@
 #define SEMAPHORE_LOGS_3 "/my_semaphore_logs_3"
 
 // Pipes Constants
-#define MSG_LEN 240
+#define MSG_LEN 1024
 
 // Length for logfiles
 #define LOG_LEN 256

@@ -11,6 +11,11 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/select.h>
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h> 
+#include <sys/time.h>
 
 #include <semaphore.h>
 #include <signal.h>
@@ -40,7 +45,6 @@ sem_t *sem_logs_1;
 sem_t *sem_logs_2;
 sem_t *sem_logs_3;
 sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
-
 
 
 int main(int argc, char *argv[])
@@ -110,6 +114,7 @@ int main(int argc, char *argv[])
     // To compare current and previous data
     char prev_drone_msg[MSG_LEN] = "";
 
+    /*
     fd_set reader;
     fd_set master;
 
@@ -121,7 +126,61 @@ int main(int argc, char *argv[])
     FD_SET(drone_server[0], &master);
     FD_SET(obstacles_server[0], &master);
     FD_SET(targets_server[0], &master);
+    */
 
+    //////////////////////////////////////////////////////
+    /* SOCKET CREATION */
+    /////////////////////////////////////////////////////
+
+    int obstacles_socket = 0;
+    int targets_socket = 0;
+    int socket, new_socket, prot_number, client_len, pid;
+    struct socket_addr_in server_address, client_address;
+
+    socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket < 0)
+    {
+        perror("Error opening socket");
+    }
+    bzero((char*) &server_address, sizeof(server_address));
+    prot_number = 2000; // Port number
+    server_address.sin_family = AF_INET;
+    servent_address.sin_port.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(prot_number);
+    if (bind(socket, (struct socket_addr *) &server_address, sizeof(server_address)) < 0)
+    {
+        perror("Error binding socket");
+    }
+    listen(socket, 5); // Max 5 connections
+    client_len = sizeof(client_address);
+
+    //////////////////////////////////////////////////////
+    /* HANDLE CLIENT CONNECTIONS */
+    /////////////////////////////////////////////////////
+
+    while(targets_socket == 0 || obstacles_socket == 0)
+    {
+        new_socket = accept(socket, (struct socket_addr *) &client_address, &client_len);
+        if (new_socket < 0)
+        {
+            errno("Error accepting connection");
+        }
+
+        char* socket_msg = read_and_echo(new_socket);
+        if (socket_msg[0] == 'O')
+        {
+            obstacles_socket = new_socket;
+        }
+        else if (socket_msg[0] == 'T')
+        {
+            targets_socket = new_socket;
+        }
+        else
+        {
+            close(new_socket);
+        }
+        
+    }
 
 
     //Main loop
@@ -386,4 +445,138 @@ void clean_up()
     shm_unlink(SHAREMEMORY_WD);
 
     printf("Clean up has been performed succesfully\n");
+}
+
+char* read_and_echo(int socket)
+{
+    int n1, n2;
+    static char buffer[MSG_LEN];
+    bzero(buffer, MSG_LEN);
+
+    // Read message from socket
+    n1 = read(socket, buffer, MSG_LEN);
+    if (n1 == -1)
+    {
+        perror("read");
+    }
+    printf("Message from socket: %s\n", buffer);
+
+    // Echo message back to socket
+    n2 = write(socket, buffer, MSG_LEN);
+    return buffer;
+}
+
+char* read_and_echo_non_blocking(int socket)
+{
+    static char buffer[MSG_LEN];
+    fd_set read_set;
+    struct timeval timeout;
+    int n1, n2, ready;
+
+    // Clear buffer
+    bzero(buffer, MSG_LEN);
+
+    // Initialize the set of file descriptors to monitor for readability
+    FD_ZERO(&read_set);
+    FD_SET(socket, &read_set);
+
+    // Set the timeout for select to 0
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    // Use select to wait for readability on the socket
+    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
+    if (ready < 0)
+    {
+        perror("ERROR in select");
+        exit(EXIT_FAILURE);
+    }
+    else if (ready == 0)
+    {
+        return NULL; // No data available
+    }
+
+    // Data is available to read
+    n1 = read(socket, buffer, MSG_LEN - 1);
+    if (n1 < 0)
+    {
+        perror("ERROR reading from socket");
+        exit(EXIT_FAILURE);
+    }
+    else if (n1 == 0)
+    {
+        return NULL; // Connection closed
+    }
+    // Print message from socket
+    printf("Message from socket: %s\n", buffer);
+
+    // Echo message back to the client
+    n2 = write(socket, buffer, n1);
+    if (n1 < 0)
+    {
+        perror("ERROR writing to socket");
+        exit(EXIT_FAILURE);
+    }
+
+    return buffer;
+
+}
+
+void write_message_and_wait_for_echo(int socket, char *message)
+{
+
+    static char buffer[MSG_LEN];
+    fd_set read_set;
+    struct timeval timeout;
+    int n1, n2, ready;
+
+    n2 = write(socket, message, n1);
+    if (n1 < 0)
+    {
+        perror("ERROR writing to socket");
+        exit(EXIT_FAILURE);
+    }
+    printf("Data sent to socket: %s\n", message);
+
+    // Clear buffer
+    bzero(buffer, MSG_LEN);
+
+    / Initialize the set of file descriptors to monitor for readability
+    FD_ZERO(&read_set);
+    FD_SET(socket, &read_set);
+
+    // Set the timeout for select to 0
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 300000;
+
+    // Use select to wait for readability on the socket
+    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
+    if (ready < 0)
+    {
+        perror("ERROR in select");
+        exit(EXIT_FAILURE);
+    }
+    else if (ready == 0)
+    {
+        // No Data available
+        printf("Timeout from server. Connection Lost!");
+        return;
+    }
+
+    // Data is available to read
+    n1 = read(socket, buffer, MSG_LEN - 1);
+    if (n1 < 0)
+    {
+        perror("ERROR reading from socket");
+        exit(EXIT_FAILURE);
+    }
+    else if (n1 == 0)
+    {
+        printf("Connection closed!");
+        return;
+        // Connection closed
+    }
+
+    // Print message from socket
+    printf("Message from socket: %s\n", buffer);
 }
