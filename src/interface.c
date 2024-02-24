@@ -20,24 +20,36 @@
 #include <errno.h>
 
 
-// Serverless pipes
+// File descriptor for writing key press data to a serverless pipe.
 int key_press_des_write;
+// File descriptor for writing data about the lowest target to a serverless pipe.
 int lowest_target_des_write;
 
-// Pipes working with the server
+// Array of file descriptors for a pipe that facilitates communication with the server.
+// server_interface[0] is for reading from the pipe, and server_interface[1] is for writing to it.
 int server_interface[2];
 
 int main(int argc, char *argv[])
 {
-    // Get the file descriptors for the pipes from the arguments
+    // Retrieve the file descriptors for the pipes by parsing the command-line arguments
     get_args(argc, argv);
 
     // Signals
+    // Setup the signal handling structure for handling specific signals
     struct sigaction sa;
+    // Assign the signal_handler function to execute when a signal is received
     sa.sa_sigaction = signal_handler;
+    // Set flags to modify behavior of the signal - SA_SIGINFO allows signal_handler
+    // to receive additional information about the signal.
     sa.sa_flags = SA_SIGINFO;
-    sigaction (SIGINT, &sa, NULL);  
+    // Register signal_handler as the handler function for SIGINT (Ctrl+C)
+    sigaction (SIGINT, &sa, NULL); 
+    // Register signal_handler as the handler function for SIGUSR1,
+    // a user-defined signal typically used for application-specific purposes. 
     sigaction (SIGUSR1, &sa, NULL);
+    // Publish the current process ID (PID) to the watchdog using the WINDOW_SYM symbol.
+    // This could be for registration or monitoring purposes, allowing the watchdog to
+    // identify or keep track of this process.
     publish_pid_to_wd(WINDOW_SYM, getpid());
 
     //----------------------------------------------------------------------------------------//
@@ -49,10 +61,11 @@ int main(int argc, char *argv[])
     start_color(); // Initialize color for drawing drone
     init_pair(1, COLOR_BLUE, COLOR_BLACK); // Drone will be of color blue
     init_pair(2, COLOR_RED, COLOR_BLACK);  // Obstacles are red
-    init_color(COLOR_YELLOW, 1000, 647, 0);  // Define an orange color
-    init_pair(2, COLOR_YELLOW, COLOR_BLACK); // Obstacles are orange
     init_pair(3, COLOR_GREEN, COLOR_BLACK); // Targets are green
+    init_pair(4, COLOR_YELLOW, COLOR_BLACK); // Score Text will be of color yellow
     noecho(); // Disable echoing: no key character will be shown when pressed.
+
+    //----------------------------------------------------------------------------------------//
 
     /* SET INITIAL DRONE POSITION */
     // Obtain the screen dimensions
@@ -68,8 +81,10 @@ int main(int argc, char *argv[])
     sprintf(initial_msg, "I1:%d,%d,%d,%d", drone_x, drone_y, screen_size_x, screen_size_y);
     write_to_pipe(server_interface[1], initial_msg);
 
+    //----------------------------------------------------------------------------------------//
 
     /* Useful variables creation*/
+
     // To compare current and previous data
     int obtained_targets = 0;
     int obtained_obstacles = 0;
@@ -77,10 +92,12 @@ int main(int argc, char *argv[])
     int prev_screen_size_x = 0;
     int original_screen_size_x;
     int original_screen_size_y;
+
     // Game logic
     char score_msg[MSG_LEN];
     int score = 0;
     int counter = 0;
+
     // Timeout
     struct timeval timeout;
     timeout.tv_sec = 0;
@@ -95,6 +112,8 @@ int main(int argc, char *argv[])
     int number_obstacles;
 
     int iteration = 0;
+    //----------------------------------------------------------------------------------------//
+
     while (1)
     {
         //////////////////////////////////////////////////////
@@ -425,6 +444,7 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
 void draw_final_window(int score)
 {
     clear();
+    int counter_count = 5;
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
     box(stdscr, 0, 0);
@@ -433,12 +453,13 @@ void draw_final_window(int score)
     int center_y = max_y / 2;
     int center_x = (max_x - 40) / 2;  // Adjusted for a message of length 30
     // Print the message at the center of the screen
-    mvprintw(center_y, center_x, "Thank you for playing! Your final score is: %d", score);
-    mvprintw(center_y + 2, center_x, "This window will close automatically in 5 seconds");
-    // Refresh the screen to show the changes
-    refresh();
-    // Wait for user input before exiting
-    sleep(5);
+    mvprintw(center_y, center_x, "You are greatly appreciated for participating. Your overall grade is: %d", score);
+    for (int i = 0; i < counter_count; i++)
+    {
+        mvprintw(center_y + 2, center_x, "This window will close automatically in %d seconds", counter_count - i);
+        refresh();
+        sleep(1);
+    }
     // Cleanup, close ncurses and exit.
     endwin();
 }

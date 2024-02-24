@@ -14,7 +14,7 @@
 
 // New Constants 
 #define Coefficient 400.0 // This was obtained by trial-error
-#define min_distance 2.0
+#define min_distance 1.0
 #define start_distance 5.0
 
 
