@@ -1,6 +1,9 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+// PORT NUMBER FOR SOCKETS
+#define PORT_NUMBER 3000
+
 // Shared memory for Watchdog's pid
 #define SHAREMEMORY_WD "/wd_pid_1"
 #define SEMAPHORE_WD_1 "/sem_wd_1"

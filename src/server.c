@@ -114,20 +114,6 @@ int main(int argc, char *argv[])
     // To compare current and previous data
     char prev_drone_msg[MSG_LEN] = "";
 
-    /*
-    fd_set reader;
-    fd_set master;
-
-    FD_ZERO(&reader);
-    FD_ZERO(&master);
-
-    FD_SET(km_server[0], &master);
-    FD_SET(interface_server[0], &master);
-    FD_SET(drone_server[0], &master);
-    FD_SET(obstacles_server[0], &master);
-    FD_SET(targets_server[0], &master);
-    */
-
     //////////////////////////////////////////////////////
     /* SOCKET CREATION */
     /////////////////////////////////////////////////////
@@ -143,13 +129,13 @@ int main(int argc, char *argv[])
         perror("Error opening socket");
     }
     bzero((char*) &server_address, sizeof(server_address));
-    prot_number = 2000; // Port number
+    prot_number = PORT_NUMBER; // Port number
     server_address.sin_family = AF_INET;
     servent_address.sin_port.s_addr = INADDR_ANY;
     server_address.sin_port = htons(prot_number);
-    if (bind(socket, (struct socket_addr *) &server_address, sizeof(server_address)) < 0)
+    if (bind(socket, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     {
-        perror("Error binding socket");
+        perror("ERROR on binding");
     }
     listen(socket, 5); // Max 5 connections
     client_len = sizeof(client_address);
@@ -163,10 +149,12 @@ int main(int argc, char *argv[])
         new_socket = accept(socket, (struct socket_addr *) &client_address, &client_len);
         if (new_socket < 0)
         {
-            errno("Error accepting connection");
+            perror("Error accepting connection");
         }
 
-        char* socket_msg = read_and_echo(new_socket);
+        char socket_msg[MSG_LEN];
+        read_and_echo(new_socket, socket_msg);
+
         if (socket_msg[0] == 'O')
         {
             obstacles_socket = new_socket;
@@ -191,181 +179,103 @@ int main(int argc, char *argv[])
         /* Handle pipe from key_manager.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_km;
-        FD_ZERO(&read_km);
-        FD_SET(km_server[0], &read_km);
-
         char km_msg[MSG_LEN];
 
-        int ready_km = select(km_server[0] + 1, &read_km, NULL, NULL, &timeout);
-        if (ready_km == -1) 
+        if (read_pipe_non_blocking(km_server[0], km_msg) == 1)
         {
-            perror("Error in select");
-        }
-        if (ready_km > 0 && FD_ISSET(km_server[0], &read_km)) 
-        {
-            ssize_t bytes_read_km = read(km_server[0], km_msg, MSG_LEN);
-            if (bytes_read_km > 0) 
-            {
-                // Read acknowledgement
-                printf("RECEIVED %s from key_manager.c\n", km_msg);
-                fflush(stdout);
-                // Response
-                char response_km_msg[MSG_LEN*2];
-                sprintf(response_km_msg, "K:%s", km_msg);
-                write_to_pipe(server_drone[1], response_km_msg);
-                printf("SENT %s to drone.c\n", response_km_msg);
-                fflush(stdout);
-            }
-        }
+            // Read acknowledgement
+            printf("[PIPE] Received from key_manager.c: %s\n", km_msg);
+            fflush(stdout);
+            // Response
+            char response_km_msg[MSG_LEN*2];
+            sprintf(response_km_msg, "K:%s", km_msg);
+            write_to_pipe(server_drone[1], response_km_msg);
+            printf("[PIPE] Sent to drone.c: %s\n", response_km_msg);
+            fflush(stdout);
+        }    
 
         //////////////////////////////////////////////////////
         /* Handle pipe from interface.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_interface;
-        FD_ZERO(&read_interface);
-        FD_SET(interface_server[0], &read_interface);
-        
+
         char interface_msg[MSG_LEN];
+        memset(interface_msg, 0 , MSG_LEN);
 
-        int ready_interface = select(interface_server[0] + 1, &read_interface, NULL, NULL, &timeout);
-        if (ready_interface == -1) 
+        if (read_pipe_non_blocking(interface_server[0], interface_msg) == 1)
         {
-            perror("Error in select");
-        }
+            // Read acknowledgement
+            printf("[PIPE] Received from interface.c: %s\n", interface_msg);
+            fflush(stdout);
+            // Response for drone.c
+            write_to_pipe(drone_server[1], interface_msg);
+            printf("[PIPE] Sent to drone.c: %s\n", interface_msg);
+            fflush(stdout);
 
-        if (ready_interface > 0 && FD_ISSET(interface_server[0], &read_interface))
-        {
-            ssize_t bytes_read_interface = read(interface_server[0], interface_msg, MSG_LEN);
-            if (bytes_read_interface > 0) 
+            if (interface_msg[0] == 'I' && interface_msg[1] == '2')
             {
-                // Read acknowledgement
-                printf("RECEIVED %s from interface.c\n", interface_msg);
-                fflush(stdout);
-                // Response for drone.c
-                write_to_pipe(server_drone[1], interface_msg);
-                printf("SENT %s to drone.c\n", interface_msg);
-                fflush(stdout);
-                // Response for obstacles.c and targets.c
-                if(interface_msg[0] == 'I' && interface_msg[1] == '2')
-                {
-                    write_to_pipe(server_obstacles[1],interface_msg);
-                    write_to_pipe(server_targets[1],interface_msg);
-                    printf("SENT %s to obstacles.c and targets.c\n", interface_msg);
-                }
+                // Send to socket: Client Targets
+                char sub_string_1[MSG_LEN];
+                strcpy(sub_string_1, interface_msg + 3);
+                write_message_and_wait_for_echo(targets_socket, sub_string_1, sizeof(sub_string_1));
+                // Send to socket: Client Obstacles
+                char sub_string_2[MSG_LEN];
+                strcpy(sub_string_2, interface_msg + 3);
+                write_message_and_wait_for_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2));
+                printf("SENT %s to obstacles.c and targets.c\n", substring2);
             }
+            
         }
 
         //////////////////////////////////////////////////////
         /* Handle pipe from drone.c */
         /////////////////////////////////////////////////////
-
-        fd_set read_drone;
-        FD_ZERO(&read_interface);
-        FD_SET(drone_server[0], &read_drone);
         
         char drone_msg[MSG_LEN];
-
-        int ready_drone = select(drone_server[0] + 1, &read_drone, NULL, NULL, &timeout);
-        if (ready_drone == -1) 
+        if (read_pipe_non_blocking(drone_server[0], drone_msg) == 1)
         {
-            perror("Error in select");
-        }
-
-        if (ready_drone > 0 && FD_ISSET(drone_server[0], &read_drone))
-        {
-            ssize_t bytes_read_drone = read(drone_server[0], drone_msg, MSG_LEN);
-            if (bytes_read_drone > 0) 
+            write_to_pipe(server_interface[1], drone_msg);
+            // Only send to drone when data has changed
+            if (strcmp(drone_msg, prev_drone_msg) != 0) 
             {
-                write_to_pipe(server_interface[1], drone_msg);
-                if (strcmp(drone_msg, prev_drone_msg) != 0) 
-                {
-                    printf("RECEIVED %s from drone.c\n", drone_msg);
-                    fflush(stdout);
-                    strcpy(prev_drone_msg, drone_msg); // Update previous values
-                    printf("SENT %s to interface.c\n", drone_msg);
-                    fflush(stdout);
-                }
-            }
-            else if (bytes_read_drone == -1)
-            {
-                perror("Read pipe drone_server");
+                printf("[PIPE] Received from drone.c: %s\n", drone_msg);
+                fflush(stdout);
+                // Update previous values
+                strcpy(prev_drone_msg, drone_msg); 
+                printf("[PIPE] Sent to interface.c: %s\n", drone_msg);
+                fflush(stdout);
             }
         }
 
         //////////////////////////////////////////////////////
-        /* Handle pipe from obstacles.c */
+        /* Handle socket from obstacles.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_obstacles;
-        FD_ZERO(&read_obstacles);
-        FD_SET(obstacles_server[0], &read_obstacles);
-        
         char obstacles_msg[MSG_LEN];
-
-        int ready_obstacles = select(obstacles_server[0] + 1, &read_obstacles, NULL, NULL, &timeout);
-        if (ready_obstacles == -1) 
+        if (read_and_echo_non_blocking(obstacles_socket, obstacles_msg) == 1)
         {
-            perror("Error in select");
-        }
-
-        if (ready_obstacles > 0 && FD_ISSET(obstacles_server[0], &read_obstacles)) 
-        {
-            ssize_t bytes_read_obstacles = read(obstacles_server[0], obstacles_msg, MSG_LEN);
-            if (bytes_read_obstacles > 0) 
-            {
-                // Read acknowledgement
-                printf("RECEIVED %s from obstacles.c\n", obstacles_msg);
-                fflush(stdout);
-                // Send to interface.c
-                write_to_pipe(server_interface[1],obstacles_msg);
-                printf("SENT %s to interface.c\n", obstacles_msg);
-                fflush(stdout);
-                // Send to drone.c
-                write_to_pipe(server_drone[1], obstacles_msg);
-                printf("SENT %s to drone.c\n", obstacles_msg);
-                fflush(stdout);
-            }
-            else if (bytes_read_obstacles == -1) 
-            {
-                perror("Read pipe obstacles_server");
-            }
-        }
+            // Send to interface.c
+            write_to_pipe(server_interface[1],obstacles_msg);
+            printf("[PIPE] Send to interface.c: %s\n", obstacles_msg);
+            fflush(stdout);
+            // Send to drone.c
+            write_to_pipe(server_drone[1], obstacles_msg);
+            printf("[PIPE] Sent to drone.c: %s\n", obstacles_msg);
+            fflush(stdout);
+        }        
 
         //////////////////////////////////////////////////////
-        /* Handle pipe from targets.c */
+        /* Handle socket from targets.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_targets;
-        FD_ZERO(&read_targets);
-        FD_SET(targets_server[0], &read_targets);
-        
         char targets_msg[MSG_LEN];
 
-        int ready_targets = select(targets_server[0] + 1, &read_targets, NULL, NULL, &timeout);
-        if (ready_targets == -1) 
+        if (read_and_echo_non_blocking(targets_socket, targets_msg) == 1)
         {
-            perror("Error in select");
-        }
-
-        if (ready_targets > 0 && FD_ISSET(targets_server[0], &read_targets)) 
-        {
-            ssize_t bytes_read_targets = read(targets_server[0], targets_msg, MSG_LEN);
-            if (bytes_read_targets > 0) 
-            {
-                // Read acknowledgement
-                printf("RECEIVED %s from targets.c\n", targets_msg);
-                fflush(stdout);
-                // Send to interface.c
-                write_to_pipe(server_interface[1],targets_msg);
-                printf("SENT %s to interface.c\n", targets_msg);
-                fflush(stdout);
-            }
-            else if (bytes_read_targets == -1) 
-            {
-                perror("Read pipe targets_server");
-            }
+            // Send to interface.c
+            write_to_pipe(server_interface[1],targets_msg);
+            printf("[PIPE] Sent to interface.c: %s\n", targets_msg);
+            fflush(stdout);
         }
 
     }
@@ -447,136 +357,141 @@ void clean_up()
     printf("Clean up has been performed succesfully\n");
 }
 
-char* read_and_echo(int socket)
+void read_and_echo(int socket, char socket_msg[])
 {
-    int n1, n2;
-    static char buffer[MSG_LEN];
-    bzero(buffer, MSG_LEN);
+    int bytes_read, bytes_written;
+    bzero(socket_msg, MSG_LEN);
 
-    // Read message from socket
-    n1 = read(socket, buffer, MSG_LEN);
-    if (n1 == -1)
+    // Read from the socket
+    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0)
     {
-        perror("read");
+        perror("ERROR reading from socket");
     }
-    printf("Message from socket: %s\n", buffer);
-
-    // Echo message back to socket
-    n2 = write(socket, buffer, MSG_LEN);
-    return buffer;
+    printf("[SOCKET] Received: %s\n", socket_msg);
+    
+    // Echo data read into socket
+    bytes_written = write(socket, socket_msg, bytes_read);
+    printf("[SOCKET] Echo sent: %s\n", socket_msg);
 }
-
-char* read_and_echo_non_blocking(int socket)
+int read_and_echo_non_blocking(int socket, char socket_msg[])
 {
-    static char buffer[MSG_LEN];
+    int ready;
+    int bytes_read, bytes_written;
     fd_set read_set;
+
     struct timeval timeout;
-    int n1, n2, ready;
-
-    // Clear buffer
-    bzero(buffer, MSG_LEN);
-
-    // Initialize the set of file descriptors to monitor for readability
-    FD_ZERO(&read_set);
-    FD_SET(socket, &read_set);
-
-    // Set the timeout for select to 0
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
 
-    // Use select to wait for readability on the socket
-    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
-    if (ready < 0)
-    {
-        perror("ERROR in select");
-        exit(EXIT_FAILURE);
-    }
-    else if (ready == 0)
-    {
-        return NULL; // No data available
-    }
+    // Clear the buffer
+    bzero(socket_msg, MSG_LEN);
 
-    // Data is available to read
-    n1 = read(socket, buffer, MSG_LEN - 1);
-    if (n1 < 0)
-    {
-        perror("ERROR reading from socket");
-        exit(EXIT_FAILURE);
-    }
-    else if (n1 == 0)
-    {
-        return NULL; // Connection closed
-    }
-    // Print message from socket
-    printf("Message from socket: %s\n", buffer);
-
-    // Echo message back to the client
-    n2 = write(socket, buffer, n1);
-    if (n1 < 0)
-    {
-        perror("ERROR writing to socket");
-        exit(EXIT_FAILURE);
-    }
-
-    return buffer;
-
-}
-
-void write_message_and_wait_for_echo(int socket, char *message)
-{
-
-    static char buffer[MSG_LEN];
-    fd_set read_set;
-    struct timeval timeout;
-    int n1, n2, ready;
-
-    n2 = write(socket, message, n1);
-    if (n1 < 0)
-    {
-        perror("ERROR writing to socket");
-        exit(EXIT_FAILURE);
-    }
-    printf("Data sent to socket: %s\n", message);
-
-    // Clear buffer
-    bzero(buffer, MSG_LEN);
-
-    / Initialize the set of file descriptors to monitor for readability
+    // Initialize the set of file descriptors to monitor for reading
     FD_ZERO(&read_set);
     FD_SET(socket, &read_set);
 
-    // Set the timeout for select to 0
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 300000;
-
-    // Use select to wait for readability on the socket
+    // Use select to check if the socket is ready for reading
     ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
-    if (ready < 0)
+    if (ready < 0) 
     {
         perror("ERROR in select");
-        exit(EXIT_FAILURE);
-    }
-    else if (ready == 0)
+    } 
+    else if (ready == 0) 
     {
-        // No Data available
-        printf("Timeout from server. Connection Lost!");
-        return;
-    }
+        return 0;
+    }  // No data available
 
-    // Data is available to read
-    n1 = read(socket, buffer, MSG_LEN - 1);
-    if (n1 < 0)
+    // Data is available for reading, so read from the socket
+    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0) 
     {
         perror("ERROR reading from socket");
-        exit(EXIT_FAILURE);
-    }
-    else if (n1 == 0)
+    } 
+    else if (bytes_read == 0) 
     {
-        printf("Connection closed!");
-        return;
-        // Connection closed
+        return 0;
+    }  // Connection closed
+    else if (socket_msg[0] == '\0') 
+    {
+        return 0;
+    } // Empty string
+
+    // Print the received message
+    printf("[SOCKET] Received: %s\n", socket_msg);
+
+    // Echo the message back to the client
+    bytes_written = write(socket, socket_msg, bytes_read);
+    if (bytes_written < 0) 
+    {
+        perror("ERROR writing to socket");
+    }
+    else
+    {
+        printf("[SOCKET] Echo sent: %s\n", socket_msg); 
+        return 1;
+    }
+}
+void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size)
+{
+    int ready;
+    int bytes_read, bytes_written;
+
+    bytes_written = write(socket, socket_msg, msg_size);
+    if (bytes_written < 0) 
+    {
+        perror("ERROR writing to socket");
+    }
+    printf("[SOCKET] Sent: %s\n", socket_msg);
+
+    // Clear the buffer
+    bzero(socket_msg, MSG_LEN);
+
+    while (socket_msg[0] == '\0')
+    {
+        // Data is available for reading, so read from the socket
+        bytes_read = read(socket, socket_msg, bytes_written);
+        if (bytes_read < 0) 
+        {
+            perror("ERROR reading from socket");
+        } 
+        else if (bytes_read == 0) 
+        {
+            printf("Connection closed!\n"); 
+            return;
+        }
+    }
+    // Print the received message
+    printf("[SOCKET] Echo received: %s\n", socket_msg);
+}
+int read_pipe_non_blocking(int pipe, char msg[])
+{
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    fd_set read_pipe;
+    FD_ZERO(&read_pipe);
+    FD_SET(pipe, &read_pipe);
+
+    char buffer[MSG_LEN];
+
+    int ready_km = select(pipe + 1, &read_pipe, NULL, NULL, &timeout);
+    if (ready_km == -1) 
+    {
+        perror("Error in select");
     }
 
-    // Print message from socket
-    printf("Message from socket: %s\n", buffer);
+    if (ready_km > 0 && FD_ISSET(pipe, &read_pipe))
+    {
+        ssize_t bytes_read_pipe = read(pipe, buffer, MSG_LEN);
+        if (bytes_read_pipe > 0) 
+        {
+            strcpy(msg, buffer);
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
 }

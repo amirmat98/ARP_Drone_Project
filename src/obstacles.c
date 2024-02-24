@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in server_address;
     struct hostent *server_host;
 
-    prot_number = 2000; // Port number
+    prot_number = PORT_NUMBER; // Port number
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
@@ -93,9 +93,23 @@ int main(int argc, char *argv[])
     /* IDENTIFICATION WITH SERVER */
     /////////////////////////////////////////////////////
 
-    char msg[MSG_LEN]; // Adjust the size based on your requirements
-    strcpy(msg, "OI");
-    write_message_and_wait_for_echo(socket_fd, msg);
+    char init_msg[MSG_LEN]; // Adjust the size based on your requirements
+    strcpy(init_msg, "OI");
+    write_message_and_wait_for_echo(socket_fd, init_msg, sizeof(init_msg));
+
+    //////////////////////////////////////////////////////
+    /* OBTAIN DIMENSIONS */
+    /////////////////////////////////////////////////////
+
+    // According to protocol, next data from server will be the screen dimensions
+    float temp_scx, temp_scy;
+    char dimension_msg[MSG_LEN];
+    read_and_echo(socket, dimension_msg);
+
+    sscanf(dimension_msg, "%f,%f", &temp_scx, &temp_scy);
+    screen_size_x = (int)temp_scx;
+    screen_size_y = (int)temp_scy;
+
 
     while (1)
     {
@@ -103,43 +117,16 @@ int main(int argc, char *argv[])
         /* Step 1: READ THE DATA FROM SERVER*/
         /////////////////////////////////////////////////////
 
-        // Initialize a set to track read events.
-        fd_set active_read_set;
-        // Clear all entries from the set.
-        FD_ZERO(&active_read_set);
-        // Add the first server obstacle's file descriptor to the set.
-        FD_SET(server_obstacles[0], &active_read_set);
-
-        // Buffer to store the server's message.
-        char buffer_server[MSG_LEN];
-
-        // Wait for any of the file descriptors to be ready for reading, or for a timeout.
-        int num_fds_ready = select(server_obstacles[0] + 1, &active_read_set, NULL, NULL, &timeout);
-        if (num_fds_ready == -1) 
+        char socket_msg[MSG_LEN]; // Adjust the size based on your requirements
+        read_and_echo_non_blocking(socket_fd, socket_msg);
+        
+        if (strcmp(socket_msg, "STOP") == 0)
         {
-            // Log an error if select fails.
-            perror("Select encountered an error");
-        }
-
-        // Check if there's data to read from the first server obstacle.
-        if (num_fds_ready > 0 && FD_ISSET(server_obstacles[0], &active_read_set)) 
-        {
-            // Read data into the buffer.
-            ssize_t count_bytes = read(server_obstacles[0], buffer_server, MSG_LEN);
-            if (count_bytes > 0) 
-            {
-                // Process the message received from the server.
-                receive_message_from_server(buffer_server, &screen_size_x, &screen_size_y);
-                printf("Screen size: %d x %d\n", screen_size_x, screen_size_y);
-                printf("-----------------------------------\n");
-                // Indicate that the screen dimensions have been received.
-                obtained_dimensions = true;
-            }
-        }
-        // Continue the loop if the screen dimensions have not been obtained yet.
-        if(!obtained_dimensions)
-        {
-            continue;
+            printf("STOP RECEIVED FROM SERVER!\n");
+            fflush(stdout);
+            printf("This process will close in 5 seconds...\n");
+            sleep(5);
+            exit(0);
         }
 
         //////////////////////////////////////////////////////
@@ -164,7 +151,7 @@ int main(int argc, char *argv[])
         check_obstacles_spawn_time(obstacles, number_obstacles, screen_size_x, screen_size_y);
 
         // SEND DATA TO SERVER
-        write_to_pipe(obstacles_server[1],obstacles_msg);
+        write_message_and_wait_for_echo(socket_fd, obstacles_msg, sizeof(obstacles_msg));
 
     }
 
@@ -230,146 +217,117 @@ void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int 
     }
 }
 
-char* read_and_echo(int socket)
+void read_and_echo(int socket, char socket_msg[])
 {
-    int n1, n2;
-    static char buffer[MSG_LEN];
-    bzero(buffer, MSG_LEN);
+    int bytes_read, bytes_written;
+    bzero(socket_msg, MSG_LEN);
 
-    // Read the message from the socket.
-    n1 = read(socket, buffer, MSG_LEN - 1);
-    if (n1 < 0)
-    {
-        perror("Error reading from socket");
-        // exit(1);
-    }
-    printf("Message from server: %s\n", buffer);
+    // Read from the socket
 
-    // Echo data back to the socket.
-    n2 = write(socket, buffer, n1);
-    if (n2 < 0)
+    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0) 
     {
-        perror("Error writing to socket");
-        // exit(1);
+        perror("ERROR reading from socket");
     }
 
-    return buffer;
+    printf("[SOCKET] Received: %s\n", socket_msg);
+    
+    // Echo data read into socket
+    bytes_written = write(socket, socket_msg, bytes_read);
+    printf("[SOCKET] Echo sent: %s\n", socket_msg);
 
 }
-char* read_and_echo_non_blocking(int socket)
+int read_and_echo_non_blocking(int socket, char socket_msg[])
 {
-    static char buffer[MSG_LEN];
-    fd_set active_read_set;
-    struct timeval timeout;
-    int n1, n2;
     int ready;
-
-    // clear the buffer
-    bzero(buffer, MSG_LEN);
-
-    // Initialize the set of file descriptors to monitor.
-    FD_ZERO(&active_read_set);
-    FD_SET(socket, &active_read_set);
-
-    // Set the timeout for select.
+    int bytes_read, bytes_written;
+    fd_set read_set;
+    struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
 
-    // Use select to wait for data to become available.
-    ready = select(socket + 1, &active_read_set, NULL, NULL, &timeout);
-    if (ready < 0)
-    {
-        perror("Error in select");
-        // exit(1);
-    }
-    else if (ready == 0)
-    {
-        printf("No data available\n");
-        return NULL;
-    }
-
-    // Data is available, read it from socket.
-    n1 = read(socket, buffer, MSG_LEN - 1);
-    if (n1 < 0)
-    {
-        perror("Error reading from socket");
-        // exit(1);
-    }
-    else if (n1 == 0)
-    {
-        printf("Connection closed\n");
-        return NULL;
-    }
-
-    // Pritn the message from the socket.
-    printf("Message from server: %s\n", buffer);
-
-    // Echo data back to the socket.
-    n2 = write(socket, buffer, n1);
-    if (n2 < 0)
-    {
-        perror("Error writing to socket");
-        // exit(1);
-    }
-
-    return buffer;
-
-}
-
-void write_message_and_wait_for_echo(int socket, char *message)
-{
-    static char buffer[MSG_LEN];
-    fd_set read_set;
-    struct timeval timeout;
-    int n1, n2;
-    int ready;
-
-    n2 = write(socket, message, sizeof(message));
-    if (n1 < 0)
-    {
-        perror("Error writing to socket");
-        // exit(1);
-    }
-    printf("Message sent to server: %s\n", message);
-
     // Clear the buffer
-    bzero(buffer, MSG_LEN);
+    bzero(socket_msg, MSG_LEN);
 
-    // Initialize the set of file descriptors to monitor.
+    // Initialize the file descriptor set for monitoring.
     FD_ZERO(&read_set);
     FD_SET(socket, &read_set);
 
-    // Set the timeout for select.
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 300000;
-
-    // Use select to wait for data to become available.
+    // Use select() to wait for data to arrive.
     ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
-    if (ready < 0)
+    if (ready < 0) 
     {
-        perror("Error in select");
-        // exit(1);
+        perror("ERROR in select");
     }
     else if (ready == 0)
     {
-        printf("Timeout from server. Connection lost!");
-        return;
+        return 0;
         // No data available
     }
 
-    // Data is available, read it from socket.
-    n1 = read(socket, buffer, MSG_LEN - 1);
-    if (n1 < 0)
+    // Data is available. Read from the socket
+    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0) 
     {
-        perror("Error reading from socket");
-        // exit(1);
+        perror("ERROR reading from socket");
     }
-    else if (n1 == 0)
-    {
-        printf("Connection closed\n");
-        return;
-    } // Connection closed
 
-    // Pritn the message from the socket.
-    printf("Message from server: %s\n", buffer);
+    else if (bytes_read == 0)
+    {
+        return 0;
+        // Connection closed
+    }
+    else if (socket_msg[0] == '\0')
+    {
+        return 0;
+        // Empty message
+    }
+
+    // Print the received message
+    printf("[SOCKET] Received: %s\n", socket_msg);
+
+    // Echo the message back to the client.
+    bytes_written = write(socket, socket_msg, bytes_read);
+    if (bytes_written < 0)
+    {
+        perror("ERROR writing to socket");
+    }
+    else
+    {
+        printf("[SOCKET] Echo sent: %s\n", socket_msg);
+        return 1;
+    }
+}
+
+void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size)
+{
+    int ready;
+    int bytes_read, bytes_written;
+
+    bytes_written = write(socket, socket_msg, msg_size);
+    if (bytes_written < 0)
+    {
+        perror("ERROR writing to socket");
+    }
+    printf("[SOCKET] Sent: %s\n", socket_msg);
+
+    // Clear the buffer
+    bzero(socket_msg, MSG_LEN);
+
+    while(socket_msg[0] == '\0')
+    {
+        // Data is available for reading, so read from the socket
+        bytes_read = read(socket, socket_msg, bytes_written);
+        if (bytes_read < 0)
+        {
+            perror("ERROR reading from socket");
+        }
+        else if (bytes_read == 0)
+        {
+            printf("Connection closed\n");
+            return;
+        }
+    }
+    // Print the received message
+    printf("[SOCKET] Echo received: %s\n", socket_msg);
 }

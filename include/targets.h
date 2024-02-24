@@ -56,9 +56,9 @@ Target generate_target(int order, int screen_size_x, int screen_size_y);
  */
 void make_target_msg(Target *targets, char *message);
 
-char* read_and_echo(int socket);
-char* read_and_echo_non_blocking(int socket);
-void write_message_and_wait_for_echo(int socket, char *message);
+void read_and_echo(int socket, char socket_msg[]);
+int read_and_echo_non_blocking(int socket, char socket_msg[]);
+void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size);
 
 
 #endif // TARGET_H

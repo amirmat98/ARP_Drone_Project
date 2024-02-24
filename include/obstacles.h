@@ -34,9 +34,9 @@ Obstacle generate_obstacle(int x, int y);
 
 void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int x, int y);
 
-char* read_and_echo(int socket);
-char* read_and_echo_non_blocking(int socket);
+void read_and_echo(int socket, char socket_msg[]);
+int read_and_echo_non_blocking(int socket, char socket_msg[]);
+void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size);
 
-void write_message_and_wait_for_echo(int socket, char *message);
 
 #endif // OBSTACLES_H
