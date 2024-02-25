@@ -1,21 +1,20 @@
 #ifndef OBSTACLES_H
 #define OBSTACLES_H
 
-// User-defined parameters
-#define MAX_OBSTACLES 1
-#define MIN_SPAWN_TIME 8
-#define MAX_SPAWN_TIME 15
-#define WAIT_TIME 1 // How often a new obstacle is created (if the number is below MAX_OBSTACLES)
-
-
-#include "constants.h"
 #include <time.h>
 
+// User-defined parameters
+#define MAX_OBSTACLES 10
+#define MIN_SPAWN_TIME 10
+#define MAX_SPAWN_TIME 15
+#define WAIT_TIME 1 // How often a new obstacle is created (if < MAX_OBSTACLES)
+
+// Structure to represente a single obstacle
 typedef struct {
     int x;
     int y;
     time_t spawn_time;
-} Obstacle;
+} Obstacle; // Diferent from "Obstacles" in constants.h
 
 /**
  * get_args - This function gets the arguments from the command line
@@ -33,10 +32,6 @@ void receive_message_from_server(char *message, int *x, int *y);
 Obstacle generate_obstacle(int x, int y);
 
 void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int x, int y);
-
-void read_and_echo(int socket, char socket_msg[]);
-int read_and_echo_non_blocking(int socket, char socket_msg[]);
-void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size);
 
 
 #endif // OBSTACLES_H

@@ -1,19 +1,7 @@
 #include "constants.h"
-#include "util.h"
+#include "import.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <sys/types.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
-
-#include <fcntl.h>
-#include <semaphore.h>
-#include <signal.h>
-
+// Publisht the PID integer value to the watchdog
 void publish_pid_to_wd(char process_symbol, pid_t pid)
 {   
     int shm_wd_fd = shm_open(SHAREMEMORY_WD, O_RDWR, 0666);
@@ -88,4 +76,164 @@ void error(char *msg)
 {
     perror(msg);
     //exit(0);
+}
+
+int read_pipe_non_blocking(int pipe_des, char *message[])
+{
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    fd_set read_pipe;
+    FD_ZERO(&read_pipe);
+    FD_SET(pipe_des, &read_pipe);
+
+    char buffer[MSG_LEN];
+
+    int ready = select(pipe_des + 1, &read_pipe, NULL, NULL, &timeout);
+    if (ready == -1)
+    {
+        perror("Error in select");
+    }
+
+    if (ready > 0 && FD_ISSET(pipe_des, &read_pipe))
+    {
+        ssize_t bytes_read_pipe = read(pipe_des, buffer, MSG_LEN);
+        if (bytes_read_pipe > 0 )
+        {
+            strcpy(message, buffer);
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+        
+    }
+}
+
+void read_and_echo(int socket, char socket_msg[])
+{
+    int bytes_read, bytes_written;
+    bzero(socket_msg, MSG_LEN);
+
+    // Read from the socket
+
+    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0) 
+    {
+        perror("ERROR reading from socket");
+    }
+    else if (bytes_read == 0)
+    {
+        return; // Connection closed
+    }
+    else if (socket_msg[0] == '\0')
+    {
+        return; // Empty message
+    }
+
+    printf("[SOCKET] Received: %s\n", socket_msg);
+    
+    // Echo data read into socket
+    bytes_written = write(socket, socket_msg, bytes_read);
+    if (bytes_written < 0)
+    {
+        perror("ERROR writing to socket");
+    }
+    printf("[SOCKET] Echo sent: %s\n", socket_msg);
+
+}
+int read_and_echo_non_blocking(int socket, char socket_msg[])
+{
+    int ready;
+    int bytes_read, bytes_written;
+    fd_set read_set;
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    // Clear the buffer
+    bzero(socket_msg, MSG_LEN);
+
+    // Initialize the file descriptor set for monitoring.
+    FD_ZERO(&read_set);
+    FD_SET(socket, &read_set);
+
+    // Use select() to wait for data to arrive.
+    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
+    if (ready < 0) 
+    {
+        perror("ERROR in select");
+    }
+    else if (ready == 0)
+    {
+        return 0;
+        // No data available
+    }
+
+    // Data is available. Read from the socket
+    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0) 
+    {
+        perror("ERROR reading from socket");
+    }
+
+    else if (bytes_read == 0)
+    {
+        return 0;
+        // Connection closed
+    }
+    else if (socket_msg[0] == '\0')
+    {
+        return 0;
+        // Empty message
+    }
+
+    // Print the received message
+    printf("[SOCKET] Received: %s\n", socket_msg);
+
+    // Echo the message back to the client.
+    bytes_written = write(socket, socket_msg, bytes_read);
+    if (bytes_written < 0)
+    {
+        perror("ERROR writing to socket");
+    }
+    else
+    {
+        printf("[SOCKET] Echo sent: %s\n", socket_msg);
+        return 1;
+    }
+}
+
+void write_and_wait_echo(int socket, char socket_msg[], size_t msg_size)
+{
+    int ready;
+    int bytes_read, bytes_written;
+
+    bytes_written = write(socket, socket_msg, msg_size);
+    if (bytes_written < 0)
+    {
+        perror("ERROR writing to socket");
+    }
+    printf("[SOCKET] Sent: %s\n", socket_msg);
+
+    // Clear the buffer
+    bzero(socket_msg, MSG_LEN);
+
+    while(socket_msg[0] == '\0')
+    {
+        // Data is available for reading, so read from the socket
+        bytes_read = read(socket, socket_msg, bytes_written);
+        if (bytes_read < 0)
+        {
+            perror("ERROR reading from socket");
+        }
+        else if (bytes_read == 0)
+        {
+            printf("Connection closed\n");
+            return;
+        }
+    }
+    // Print the received message
+    printf("[SOCKET] Echo received: %s\n", socket_msg);
 }

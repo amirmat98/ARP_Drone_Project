@@ -12,5 +12,13 @@ void write_message_to_logger(int who, int type, char *msg);
 
 void error(char *msg);
 
+int read_pipe_non_blocking(int pipe_des, char *message[]);
+
+void read_and_echo(int socket, char socket_msg[]);
+
+int read_and_echo_non_blocking(int socket, char socket_msg[]);
+
+void write_and_wait_echo(int socket, char socket_msg[], size_t msg_len);
+
 
 #endif // UTIL_H

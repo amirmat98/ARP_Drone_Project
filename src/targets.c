@@ -1,28 +1,5 @@
 #include "targets.h"
-#include "util.h"
-#include "constants.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-#include <string.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
-#include <sys/time.h>
-
-#include <semaphore.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <errno.h>
+#include "import.h"
 
 // Pipes working with the server
 int server_targets[0];
@@ -85,9 +62,8 @@ int main(int argc, char *argv[])
     /* IDENTIFICATION WITH SERVER */
     /////////////////////////////////////////////////////
 
-    char init_msg[MSG_LEN];
-    strcpy(init_msg, "TI");
-    write_message_and_wait_for_echo(socket, init_msg, sizeof(init_msg));
+    char init_msg[] = "TI";
+    write_and_wait_echo(socket, init_msg, sizeof(init_msg));
 
     //////////////////////////////////////////////////////
     /* OBTAIN DIMENSIONS */
@@ -96,6 +72,7 @@ int main(int argc, char *argv[])
     // According to protocol, next data from server will be the screen dimensions
     char dimension_msg[MSG_LEN];
     read_and_echo(socket, dimension_msg);
+
     float temp_scx, temp_scy;
     sscanf(dimension_msg, "%f,%f", &temp_scx, &temp_scy);
     screen_size_x = (int)temp_scx;
@@ -110,8 +87,6 @@ int main(int argc, char *argv[])
         
         // Array to store generated targets
         Target targets[MAX_TARGETS];
-        // Set seed for random number generation
-        srand(time(NULL));
 
         if(targets_created == false)
         {
@@ -133,7 +108,7 @@ int main(int argc, char *argv[])
             make_target_msg(targets, targets_msg);
 
             // Send the data to the server
-            write_message_and_wait_for_echo(socket, targets_msg, sizeof(targets_msg));
+            write_and_wait_echo(socket, targets_msg, sizeof(targets_msg));
             // write_to_pipe(targets_server[1], targets_msg);
             targets_created = true;
         }
@@ -150,8 +125,8 @@ int main(int argc, char *argv[])
         if (strcmp(socket_msg, "STOP") == 0)
         {
             printf("STOP RECEIVED FROM SERVER!\n");
-            fflush(stdout);
             printf("This program will close in 5 seconds!\n");
+            fflush(stdout);
             sleep(5);
             exit(0);
         }
@@ -239,127 +214,4 @@ void make_target_msg(Target *targets, char *message)
     }
     message[offset] = '\0'; // Null-terminate the string
     printf("%s\n", message);
-}
-
-void read_and_echo(int socket, char socket_msg[])
-{
-    int bytes_read, bytes_written;
-    bzero(socket_msg, MSG_LEN);
-
-    // Read from the socket
-
-    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
-    if (bytes_read < 0) 
-    {
-        perror("ERROR reading from socket");
-    }
-    else if (bytes_read == 0)
-    {
-        return; // Connection closed
-    }
-    else if (socket_msg[0] == '\0')
-    {
-        return; // Empty message
-    }
-
-    printf("[SOCKET] Received: %s\n", socket_msg);
-    
-    // Echo data read into socket
-    bytes_written = write(socket, socket_msg, bytes_read);
-    printf("[SOCKET] Echo sent: %s\n", socket_msg);
-
-}
-int read_and_echo_non_blocking(int socket, char socket_msg[])
-{
-    int ready;
-    int bytes_read, bytes_written;
-    fd_set read_set;
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
-    // Clear the buffer
-    bzero(socket_msg, MSG_LEN);
-
-    // Initialize the file descriptor set for monitoring.
-    FD_ZERO(&read_set);
-    FD_SET(socket, &read_set);
-
-    // Use select() to wait for data to arrive.
-    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
-    if (ready < 0) 
-    {
-        perror("ERROR in select");
-    }
-    else if (ready == 0)
-    {
-        return 0;
-        // No data available
-    }
-
-    // Data is available. Read from the socket
-    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
-    if (bytes_read < 0) 
-    {
-        perror("ERROR reading from socket");
-    }
-
-    else if (bytes_read == 0)
-    {
-        return 0;
-        // Connection closed
-    }
-    else if (socket_msg[0] == '\0')
-    {
-        return 0;
-        // Empty message
-    }
-
-    // Print the received message
-    printf("[SOCKET] Received: %s\n", socket_msg);
-
-    // Echo the message back to the client.
-    bytes_written = write(socket, socket_msg, bytes_read);
-    if (bytes_written < 0)
-    {
-        perror("ERROR writing to socket");
-    }
-    else
-    {
-        printf("[SOCKET] Echo sent: %s\n", socket_msg);
-        return 1;
-    }
-}
-
-void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size)
-{
-    int ready;
-    int bytes_read, bytes_written;
-
-    bytes_written = write(socket, socket_msg, msg_size);
-    if (bytes_written < 0)
-    {
-        perror("ERROR writing to socket");
-    }
-    printf("[SOCKET] Sent: %s\n", socket_msg);
-
-    // Clear the buffer
-    bzero(socket_msg, MSG_LEN);
-
-    while(socket_msg[0] == '\0')
-    {
-        // Data is available for reading, so read from the socket
-        bytes_read = read(socket, socket_msg, bytes_written);
-        if (bytes_read < 0)
-        {
-            perror("ERROR reading from socket");
-        }
-        else if (bytes_read == 0)
-        {
-            printf("Connection closed\n");
-            return;
-        }
-    }
-    // Print the received message
-    printf("[SOCKET] Echo received: %s\n", socket_msg);
 }

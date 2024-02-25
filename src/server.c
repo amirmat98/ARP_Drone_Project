@@ -1,27 +1,5 @@
 #include "server.h"
-#include "constants.h"
-#include "util.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
-#include <sys/time.h>
-
-#include <semaphore.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
+#include "import.h"
 
 
 // Pipes
@@ -189,8 +167,8 @@ int main(int argc, char *argv[])
             // STOP key pressed (P)
             if (km_msg[0] == 'S')
             {
-                write_message_and_wait_for_echo(targets_socket, km_msg, sizeof(km_msg));
-                write_message_and_wait_for_echo(obstacles_socket, km_msg, sizeof(km_msg));
+                write_and_wait_echo(targets_socket, km_msg, sizeof(km_msg));
+                write_and_wait_echo(obstacles_socket, km_msg, sizeof(km_msg));
                 exit(0);
             }
             // Response
@@ -224,16 +202,16 @@ int main(int argc, char *argv[])
                 // Send to socket: Client Targets
                 char sub_string_1[MSG_LEN];
                 strcpy(sub_string_1, interface_msg + 3);
-                write_message_and_wait_for_echo(targets_socket, sub_string_1, sizeof(sub_string_1));
+                write_and_wait_echo(targets_socket, sub_string_1, sizeof(sub_string_1));
                 // Send to socket: Client Obstacles
                 char sub_string_2[MSG_LEN];
                 strcpy(sub_string_2, interface_msg + 3);
-                write_message_and_wait_for_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2));
+                write_and_wait_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2));
                 printf("SENT %s to obstacles.c and targets.c\n", substring2);
             }
             if (interface_msg[0] == 'G')
             {
-                write_message_and_wait_for_echo(targets_socket, interface_msg, sizeof(interface_msg));
+                write_and_wait_echo(targets_socket, interface_msg, sizeof(interface_msg));
             }
             
         }
@@ -366,143 +344,4 @@ void clean_up()
     shm_unlink(SHAREMEMORY_WD);
 
     printf("Clean up has been performed succesfully\n");
-}
-
-void read_and_echo(int socket, char socket_msg[])
-{
-    int bytes_read, bytes_written;
-    bzero(socket_msg, MSG_LEN);
-
-    // Read from the socket
-    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
-    if (bytes_read < 0)
-    {
-        perror("ERROR reading from socket");
-    }
-    printf("[SOCKET] Received: %s\n", socket_msg);
-    
-    // Echo data read into socket
-    bytes_written = write(socket, socket_msg, bytes_read);
-    printf("[SOCKET] Echo sent: %s\n", socket_msg);
-}
-int read_and_echo_non_blocking(int socket, char socket_msg[])
-{
-    int ready;
-    int bytes_read, bytes_written;
-    fd_set read_set;
-
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
-    // Clear the buffer
-    bzero(socket_msg, MSG_LEN);
-
-    // Initialize the set of file descriptors to monitor for reading
-    FD_ZERO(&read_set);
-    FD_SET(socket, &read_set);
-
-    // Use select to check if the socket is ready for reading
-    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
-    if (ready < 0) 
-    {
-        perror("ERROR in select");
-    } 
-    else if (ready == 0) 
-    {
-        return 0;
-    }  // No data available
-
-    // Data is available for reading, so read from the socket
-    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
-    if (bytes_read < 0) 
-    {
-        perror("ERROR reading from socket");
-    } 
-    else if (bytes_read == 0) 
-    {
-        return 0;
-    }  // Connection closed
-    else if (socket_msg[0] == '\0') 
-    {
-        return 0;
-    } // Empty string
-
-    // Print the received message
-    printf("[SOCKET] Received: %s\n", socket_msg);
-
-    // Echo the message back to the client
-    bytes_written = write(socket, socket_msg, bytes_read);
-    if (bytes_written < 0) 
-    {
-        perror("ERROR writing to socket");
-    }
-    else
-    {
-        printf("[SOCKET] Echo sent: %s\n", socket_msg); 
-        return 1;
-    }
-}
-void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size)
-{
-    int ready;
-    int bytes_read, bytes_written;
-
-    bytes_written = write(socket, socket_msg, msg_size);
-    if (bytes_written < 0) 
-    {
-        perror("ERROR writing to socket");
-    }
-    printf("[SOCKET] Sent: %s\n", socket_msg);
-
-    // Clear the buffer
-    bzero(socket_msg, MSG_LEN);
-
-    while (socket_msg[0] == '\0')
-    {
-        // Data is available for reading, so read from the socket
-        bytes_read = read(socket, socket_msg, bytes_written);
-        if (bytes_read < 0) 
-        {
-            perror("ERROR reading from socket");
-        } 
-        else if (bytes_read == 0) 
-        {
-            printf("Connection closed!\n"); 
-            return;
-        }
-    }
-    // Print the received message
-    printf("[SOCKET] Echo received: %s\n", socket_msg);
-}
-int read_pipe_non_blocking(int pipe, char msg[])
-{
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-    fd_set read_pipe;
-    FD_ZERO(&read_pipe);
-    FD_SET(pipe, &read_pipe);
-
-    char buffer[MSG_LEN];
-
-    int ready_km = select(pipe + 1, &read_pipe, NULL, NULL, &timeout);
-    if (ready_km == -1) 
-    {
-        perror("Error in select");
-    }
-
-    if (ready_km > 0 && FD_ISSET(pipe, &read_pipe))
-    {
-        ssize_t bytes_read_pipe = read(pipe, buffer, MSG_LEN);
-        if (bytes_read_pipe > 0) 
-        {
-            strcpy(msg, buffer);
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
 }

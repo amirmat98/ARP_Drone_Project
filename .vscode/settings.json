@@ -13,7 +13,8 @@
         "fcntl.h": "c",
         "wait.h": "c",
         "string.h": "c",
-        "constants.h": "c"
+        "constants.h": "c",
+        "types.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

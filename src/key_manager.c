@@ -1,23 +1,5 @@
 #include "key_manager.h"
-#include "constants.h"
-#include "util.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-
-#include <ctype.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <semaphore.h>
-#include <errno.h>
+#include "import.h"
 
 // Global variables for pipe descriptors to handle inter-process communication
 // Pipes working with the server

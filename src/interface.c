@@ -1,25 +1,8 @@
 #include "interface.h"
-#include "constants.h"
-#include "util.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
-#include <sys/ipc.h>
-#include <sys/mman.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/select.h>
-
-#include <fcntl.h>
-#include <ncurses.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <errno.h>
+#include "import.h"
 
 
+// Serverless pipe
 int interface_km[2];
 int interface_drone[2];
 

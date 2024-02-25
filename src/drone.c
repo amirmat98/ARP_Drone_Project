@@ -1,27 +1,7 @@
 #include "drone.h"
-#include "constants.h"
-#include "util.h"
-
-#include <stdio.h>       
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-
-#include <fcntl.h>
-#include <math.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <string.h>
-#include <errno.h>
+#include "import.h"
 
 // Serverless pipes
-// int lowest_target_fd[2];
 int interface_drone[2];
 
 // Pipes working with the server
@@ -31,8 +11,10 @@ int drone_server[2];
 
 int main(int argc, char *argv[])
 {
+    // Read the file descriptors from the arguments
     get_args(argc, argv);
 
+    // Signals
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
     sa.sa_flags = SA_SIGINFO;
@@ -76,26 +58,11 @@ int main(int argc, char *argv[])
         /* SECTION 1: READ DATA FROM SERVER */
         /////////////////////////////////////////////////////
         
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(server_drone[0], &read_fds);
+        char server_msg[MSG_LEN];
 
-        struct timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
-
-        int ready = select (server_drone[0] + 1, &read_fds, NULL, NULL, &timeout);
-        if (ready == -1)
+        if (read_pipe_non_blocking(server_drone[0], server_msg) == 1)
         {
-            perror("Error in select");
-        }
-
-        if (ready > 0 && FD_ISSET(server_drone[0], &read_fds))
-        {
-            ssize_t bytes_read = read(server_drone[0], server_msg, MSG_LEN);
-            if (bytes_read > 0)
-            {
-                 // Message origin: Keyboard Manager
+                // Message origin: Keyboard Manager
                 if(server_msg[0] == 'K')
                 {
                     sscanf(server_msg, "K:%d,%d", &action_x, &action_y);
@@ -114,7 +81,7 @@ int main(int argc, char *argv[])
                 {
                     sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
                     // printf("Changed screen dimensions to: %s\n", server_msg);
-                    fflush(stdout);
+                    // fflush(stdout);
                 }
                 // Message origin: Obstacles
                 else if (server_msg[0 == 'O'])
@@ -124,7 +91,6 @@ int main(int argc, char *argv[])
                     obtained_obstacles = 1;
                 }
             }
-        }
         else
         {
             action_x = 0;
@@ -132,7 +98,7 @@ int main(int argc, char *argv[])
         }
 
 
-        // char obstacles_msg[] = "O[1]200,200"; // Random for initial execution
+        // If obstacles has not been obtained, continue loop.
         if (obtained_obstacles == 0)
         {
             // parse_obstacles_msg(obstacles_msg, obstacles, &number_obstacles);
@@ -143,33 +109,12 @@ int main(int argc, char *argv[])
         /* SECTION 2: READ DATA FROM INTERFACE.C (SERVERLESS PIPE) */
         /////////////////////////////////////////////////////
 
-        fd_set read_interface;
-        FD_ZERO(&read_interface);
-        FD_SET(interface_drone[0], &read_interface);
-        
-        char msg[MSG_LEN];
+        char interface_msg[MSG_LEN];
 
-        int ready_targets = select(interface_drone[0] + 1, &read_interface, NULL, NULL, &timeout);
-        if (ready_targets == -1) 
+        if (read_pipe_non_blocking(interface_drone[0], interface_msg) == 1)
         {
-            perror("Error in select");
-        }
-
-        if (ready_targets > 0 && FD_ISSET(interface_drone[0], &read_interface))
-        {
-            ssize_t bytes_read_interface = read(interface_drone[0], msg, MSG_LEN);
-            if (bytes_read_interface > 0) 
-            {
-                // Read acknowledgement
-                // printf("RECEIVED %s from interface.c\n", msg);
-                sscanf(msg, "%d,%d", &target_x, &target_y);
-                fflush(stdout);
-                valid_target = 1;
-            }
-            else if (bytes_read_interface == -1) 
-            {
-                perror("Read pipe interface_drone failed");
-            }
+            sscanf(interface_msg, "%d,%d", &target_x, &target_y);
+            valid_target = 1;
         }
 
         //////////////////////////////////////////////////////
@@ -215,8 +160,6 @@ int main(int argc, char *argv[])
             // OBSTACLES
             for (int i = 0; i < number_obstacles; i++)
             {
-                printf("External Force, x: %d\n", obstacles[i].x);
-                printf("External Force, y: %d\n", obstacles[i].y);
                 calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
             }
 
@@ -289,16 +232,6 @@ void differential_equations(double *position, double *velocity, double force, do
 
 }
 
-// Moving the drone step by step as initial development
-void step_method(int *x, int *y, int action_x, int action_y)
-{
-    (*x) = (*x) + action_x;
-    (*y) = (*y) + action_y;
-
-
-    //sprintf(shared_action, "%d,%d", 0, 0); // Zeros written on action memory
-}
-
 
 void calculate_extenal_force(double drone_x, double drone_y, double target_x, double target_y, double obstacle_x, double obstacle_y, double *external_force_x, double *external_force_y)
 {
@@ -307,15 +240,15 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
     double angle_to_target = atan2(target_y - drone_y, target_x - drone_x);
 
     // To avoid division by zero or extremely high forces
-    if (distance_to_target < min_distance)
+    if (distance_to_target < MAX_DISTANCE)
     {
         // Keep the force value as it were on the min_distance
-        distance_to_target = min_distance;
+        distance_to_target = MAX_DISTANCE;
     }
-    else if (distance_to_target < start_distance)
+    else if (distance_to_target < MIN_DISTANCE)
     {
-        *external_force_x += Coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * cos(angle_to_target);
-        *external_force_y += Coefficient * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * sin(angle_to_target);
+        *external_force_x += COEFFICIENT * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * cos(angle_to_target);
+        *external_force_y += COEFFICIENT * (1.0 / distance_to_target - 1.0 / 5.0) * (1.0 / pow(distance_to_target,2)) * sin(angle_to_target);
     }
     else
     {
@@ -328,15 +261,15 @@ void calculate_extenal_force(double drone_x, double drone_y, double target_x, do
     double angle_to_obstacle = atan2(obstacle_y - drone_y, obstacle_x - drone_x);
 
     // To avoid division by zero or extremely high forces
-    if (distance_to_obstacle < min_distance)
+    if (distance_to_obstacle < MAX_DISTANCE)
     {
         // Keep the force value as it were on the min_distance
-        distance_to_obstacle = min_distance;
+        distance_to_obstacle = MAX_DISTANCE;
     }
-    else if (distance_to_obstacle < start_distance)
+    else if (distance_to_obstacle < MIN_DISTANCE)
     {
-        *external_force_x -= Coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * cos(angle_to_obstacle);
-        *external_force_y -= Coefficient * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * sin(angle_to_obstacle);
+        *external_force_x -= COEFFICIENT * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * cos(angle_to_obstacle);
+        *external_force_y -= COEFFICIENT * (1.0 / distance_to_obstacle - 1.0 / 5.0) * (1.0 / pow(distance_to_obstacle, 2)) * sin(angle_to_obstacle);
     }
     else
     {

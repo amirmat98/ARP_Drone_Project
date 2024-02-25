@@ -4,18 +4,17 @@
 #include "constants.h"
 #include "signal.h"
 
-#define SLEEP_DRONE 100000  // To let the interface.c process execute first write the initial positions.
-
 #define MASS 1.0    // Mass of the object
 #define DAMPING 1 // Damping coefficient
 #define D_T 0.1 // Time interval in seconds
-#define F_MAX 30.0 // Maximal force that can be acted on the drone's motors
+#define F_MAX 30.0 // Maximum force that can be acted on the drone's motors
 #define EXT_FORCE_MAX 40.0 // Maximum external force on any axis.
 
 // New Constants 
-#define Coefficient 400.0 // This was obtained by trial-error
-#define min_distance 1.0
-#define start_distance 5.0
+#define COEFFICIENT 400.0 // Obtained by testing and trial-error
+#define MIN_DISTANCE 5.0  // Distance where the drone begins feeling force of an object
+#define MAX_DISTANCE 2.0  // Distance where the drone caps out the force of an object
+#define FLOAT_TOLERANCE 0.0044  // Below this value the process drone.c will not print the velocity anymore
 
 
 void get_args(int argc, char *argv[]);

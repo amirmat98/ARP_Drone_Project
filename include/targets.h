@@ -2,8 +2,6 @@
 #define TARGET_H
 
 // User-defined parameters
-#define SCREEN_WIDTH 168
-#define SCREEN_HEIGHT 44
 #define MAX_TARGETS 1
 
 // Structure to represent a target
@@ -55,10 +53,6 @@ Target generate_target(int order, int screen_size_x, int screen_size_y);
  * @param message pointer to a character array to store the output message
  */
 void make_target_msg(Target *targets, char *message);
-
-void read_and_echo(int socket, char socket_msg[]);
-int read_and_echo_non_blocking(int socket, char socket_msg[]);
-void write_message_and_wait_for_echo(int socket, char socket_msg[], size_t msg_size);
 
 
 #endif // TARGET_H
