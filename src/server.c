@@ -186,6 +186,13 @@ int main(int argc, char *argv[])
             // Read acknowledgement
             printf("[PIPE] Received from key_manager.c: %s\n", km_msg);
             fflush(stdout);
+            // STOP key pressed (P)
+            if (km_msg[0] == 'S')
+            {
+                write_message_and_wait_for_echo(targets_socket, km_msg, sizeof(km_msg));
+                write_message_and_wait_for_echo(obstacles_socket, km_msg, sizeof(km_msg));
+                exit(0);
+            }
             // Response
             char response_km_msg[MSG_LEN*2];
             sprintf(response_km_msg, "K:%s", km_msg);
@@ -223,6 +230,10 @@ int main(int argc, char *argv[])
                 strcpy(sub_string_2, interface_msg + 3);
                 write_message_and_wait_for_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2));
                 printf("SENT %s to obstacles.c and targets.c\n", substring2);
+            }
+            if (interface_msg[0] == 'G')
+            {
+                write_message_and_wait_for_echo(targets_socket, interface_msg, sizeof(interface_msg));
             }
             
         }

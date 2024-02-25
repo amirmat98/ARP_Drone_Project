@@ -21,7 +21,8 @@
 #include <errno.h>
 
 // Serverless pipes
-int lowest_target_fd[2];
+// int lowest_target_fd[2];
+int interface_drone[2];
 
 // Pipes working with the server
 int server_drone[2];
@@ -131,10 +132,11 @@ int main(int argc, char *argv[])
         }
 
 
-        char obstacles_msg[] = "O[1]200,200"; // Random for initial execution
+        // char obstacles_msg[] = "O[1]200,200"; // Random for initial execution
         if (obtained_obstacles == 0)
         {
-            parse_obstacles_msg(obstacles_msg, obstacles, &number_obstacles);
+            // parse_obstacles_msg(obstacles_msg, obstacles, &number_obstacles);
+            continue;
         }
 
         //////////////////////////////////////////////////////
@@ -143,19 +145,19 @@ int main(int argc, char *argv[])
 
         fd_set read_interface;
         FD_ZERO(&read_interface);
-        FD_SET(lowest_target_fd[0], &read_interface);
+        FD_SET(interface_drone[0], &read_interface);
         
         char msg[MSG_LEN];
 
-        int ready_targets = select(lowest_target_fd[0] + 1, &read_interface, NULL, NULL, &timeout);
+        int ready_targets = select(interface_drone[0] + 1, &read_interface, NULL, NULL, &timeout);
         if (ready_targets == -1) 
         {
             perror("Error in select");
         }
 
-        if (ready_targets > 0 && FD_ISSET(lowest_target_fd[0], &read_interface))
+        if (ready_targets > 0 && FD_ISSET(interface_drone[0], &read_interface))
         {
-            ssize_t bytes_read_interface = read(lowest_target_fd[0], msg, MSG_LEN);
+            ssize_t bytes_read_interface = read(interface_drone[0], msg, MSG_LEN);
             if (bytes_read_interface > 0) 
             {
                 // Read acknowledgement
@@ -166,7 +168,7 @@ int main(int argc, char *argv[])
             }
             else if (bytes_read_interface == -1) 
             {
-                perror("Read pipe lowest_target_fd");
+                perror("Read pipe interface_drone failed");
             }
         }
 
@@ -213,24 +215,26 @@ int main(int argc, char *argv[])
             // OBSTACLES
             for (int i = 0; i < number_obstacles; i++)
             {
+                printf("External Force, x: %d\n", obstacles[i].x);
+                printf("External Force, y: %d\n", obstacles[i].y);
                 calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
             }
 
             if(external_force_x > EXT_FORCE_MAX)
             {
-                external_force_x = 0.0;
+                external_force_x = EXT_FORCE_MAX;
             }
             if(external_force_x < -EXT_FORCE_MAX)
             {
-                external_force_x = 0.0;
+                external_force_x = EXT_FORCE_MAX;
             }
             if(external_force_y > EXT_FORCE_MAX)
             {
-                external_force_y = 0.0;
+                external_force_y = EXT_FORCE_MAX;
             }
             if(external_force_y < -EXT_FORCE_MAX)
             {
-                external_force_y = 0.0;
+                external_force_y = EXT_FORCE_MAX;
             }
 
             //////////////////////////////////////////////////////
@@ -352,7 +356,13 @@ void parse_obstacles_msg(char *obstacles_msg, Obstacles *obstacles, int *number_
 
     while (token != NULL && *number_obstacles < total_obstacles)
     {
-        sscanf(token, "%d,%d", &obstacles[*number_obstacles].x, &obstacles[*number_obstacles].y);
+        float x_float, y_float;
+        sscanf(token, "%f,%f", &x_float, &y_float);
+
+        // Convert float to int (rounding is acceptable)
+        obstacles[*number_obstacles].x = (int)(x_float + 0.5);
+        obstacles[*number_obstacles].y = (int)(y_float + 0.5);
+
         obstacles[*number_obstacles].total = *number_obstacles + 1;
 
         token = strtok(NULL, "|");
@@ -382,5 +392,5 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d %d", &server_drone[0], &drone_server[1], &lowest_target_fd[0]);
+    sscanf(argv[1], "%d %d %d", &server_drone[0], &drone_server[1], &interface_drone[0]);
 }

@@ -20,14 +20,13 @@
 #include <errno.h>
 
 
-// File descriptor for writing key press data to a serverless pipe.
-int key_press_des_write;
-// File descriptor for writing data about the lowest target to a serverless pipe.
-int lowest_target_des_write;
+int interface_km[2];
+int interface_drone[2];
 
 // Array of file descriptors for a pipe that facilitates communication with the server.
 // server_interface[0] is for reading from the pipe, and server_interface[1] is for writing to it.
 int server_interface[2];
+int interface_server[2];
 
 int main(int argc, char *argv[])
 {
@@ -58,12 +57,14 @@ int main(int argc, char *argv[])
     initscr(); // Initialize
     timeout(0); // Set non-blocking getch
     curs_set(0); // Hide the cursor from the terminal
+    noecho(); // Disable echoing: no key character will be shown when pressed.
+
+    // Enable color
     start_color(); // Initialize color for drawing drone
     init_pair(1, COLOR_BLUE, COLOR_BLACK); // Drone will be of color blue
     init_pair(2, COLOR_RED, COLOR_BLACK);  // Obstacles are red
     init_pair(3, COLOR_GREEN, COLOR_BLACK); // Targets are green
     init_pair(4, COLOR_YELLOW, COLOR_BLACK); // Score Text will be of color yellow
-    noecho(); // Disable echoing: no key character will be shown when pressed.
 
     //----------------------------------------------------------------------------------------//
 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
     // Write the initial position and screen size data into the server
     char initial_msg[MSG_LEN];
     sprintf(initial_msg, "I1:%d,%d,%d,%d", drone_x, drone_y, screen_size_x, screen_size_y);
-    write_to_pipe(server_interface[1], initial_msg);
+    write_to_pipe(interface_server[1], initial_msg);
 
     //----------------------------------------------------------------------------------------//
 
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
             // Send data
             char screen_msg[MSG_LEN];
             sprintf(screen_msg, "I2:%.3f,%.3f", (float)screen_size_x, (float)screen_size_y);
-            write_to_pipe(server_interface[1], screen_msg);
+            write_to_pipe(interface_server[1], screen_msg);
             // Re-scale the targets on the screen
             if (iteration > 0 && obtained_targets == 1)
             {
@@ -198,6 +199,8 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        printf("TARGETS OBTAINED.\n");
+
         //////////////////////////////////////////////////////
         /* SECTION 3: DATA ANALYSIS & GAME SCORE CALCULATION*/
         /////////////////////////////////////////////////////
@@ -211,34 +214,19 @@ int main(int argc, char *argv[])
         // When there are no more targets, the game is finished.
         if (number_targets == 0)
         {
-            draw_final_window(score);
-            exit(0);
+            score = 0;
+            obtained_targets = 0;
+            write_to_pipe(interface_server[1], "GE");
+            continue;
         }
 
         sprintf(lowest_target, "%d,%d", targets[lowest_index].x, targets[lowest_index].y);
         // Send to drone w/ serverless pipe lowest_target
-        write_to_pipe(lowest_target_des_write, lowest_target);
+        write_to_pipe(interface_drone[1], lowest_target);
 
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
-            // Update score and counter (reset timer)
-            if (counter > 2000) 
-            {  // 2000 * 10ms = 20 seconds 
-                score += 2;
-            }
-            else if (counter > 1000) 
-            {   // 1000 * 10ms = 10 seconds
-                score += 6;
-            }
-            else if (counter > 500) 
-            {   // 500 * 10ms = 5 seconds 
-                score += 8;
-            }
-            else 
-            {  // Les than 5 seconds
-                score += 10;
-            }
-            counter = 0;
+            calculate_score(&counter, &score, 1);
             // Remove the target with the lowest ID
             remove_target(targets, &number_targets, lowest_index);
         }
@@ -246,8 +234,7 @@ int main(int argc, char *argv[])
         // Check if the drone has crashed into an obstacle
         if (check_collision_drone_obstacle(obstacles, number_obstacles, drone_x, drone_y))
         {
-            // Update score
-            score -= 5;
+            calculate_score(&counter, &score, 0);
         }
 
         //////////////////////////////////////////////////////
@@ -268,7 +255,7 @@ int main(int argc, char *argv[])
             char msg[MSG_LEN];
             sprintf(msg, "%c", ch);
             // Send it directly to key_manager.c
-            write_to_pipe(key_press_des_write, msg);
+            write_to_pipe(interface_km[1], msg);
         }
 
         flushinp(); // Clear the input buffer
@@ -286,21 +273,21 @@ int main(int argc, char *argv[])
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d %d %d", &key_press_des_write, &server_interface[0],
-           &server_interface[1], &lowest_target_des_write);
+    sscanf(argv[1], "%d %d %d %d", &interface_km[1], &server_interface[0],
+           &interface_server[1], &interface_drone[1]);
 }
 
-
+// Function to handle signals within the process
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
         // Close file desciptors
-        close(key_press_des_write);
-        close(lowest_target_des_write);
+        close(interface_km[1]);
+        close(interface_drone[1]);
         close(server_interface[0]);
-        close(server_interface[1]);
+        close(interface_server[1]);
         exit(1);
     }
     if (signo == SIGUSR1)
@@ -314,6 +301,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     }
 }
 
+// Function to draw the regular game window
 void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets, 
                     Obstacles *obstacles, int number_obstacles, const char *score_msg)
 {
@@ -441,6 +429,8 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
     return 0; // Drone is not at the same coordinates as any obstacle
 }
 
+
+/*
 void draw_final_window(int score)
 {
     clear();
@@ -462,4 +452,36 @@ void draw_final_window(int score)
     }
     // Cleanup, close ncurses and exit.
     endwin();
+}
+*/
+
+
+void calculate_score(int *counter, int *score, int operator)
+{
+    if (operator == 1)
+    {
+            // Update score and counter (reset timer)
+            if (counter > 1500) 
+            {  // 1500 * 10ms = 15 seconds 
+                score += 2;
+            }
+            else if (counter > 1000) 
+            {   // 1000 * 10ms = 10 seconds
+                score += 4;
+            }
+            else if (counter > 500) 
+            {   // 500 * 10ms = 5 seconds 
+                score += 6;
+            }
+            else 
+            {  // Les than 5 seconds
+                score += 10;
+            }
+            counter = 0;
+    }
+    else if (operator == 0)
+    {
+        // Update score
+        score -= 5;
+    }
 }

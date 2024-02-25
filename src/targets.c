@@ -158,12 +158,13 @@ int main(int argc, char *argv[])
 
         else if (strcmp(socket_msg, "GE") == 0)
         {
-            printf("GE RECEIVED FROM SERVER!\n");
+            // printf("GE RECEIVED FROM SERVER!\n");
             fflush(stdout);
-            printf("Regenerating targets...\n");
+            // printf("Regenerating targets...\n");
+            targets_created = false;
         }
         // Delay
-        usleep(200000); // 200ms
+        // usleep(200000); // 200ms
     }
     return 0;
 
@@ -251,6 +252,14 @@ void read_and_echo(int socket, char socket_msg[])
     if (bytes_read < 0) 
     {
         perror("ERROR reading from socket");
+    }
+    else if (bytes_read == 0)
+    {
+        return; // Connection closed
+    }
+    else if (socket_msg[0] == '\0')
+    {
+        return; // Empty message
     }
 
     printf("[SOCKET] Received: %s\n", socket_msg);
