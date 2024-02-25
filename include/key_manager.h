@@ -20,7 +20,7 @@ void get_args(int argc, char *argv[]);
  * 
  * Returns: The key that was read from the pipe
  */
-int read_key_from_pipe (int pipe_des);
+// int read_key_from_pipe (int pipe_des);
 
 /**
  * signal_handler - This function is used to handle signals sent to the program
@@ -40,7 +40,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context);
  * 
  * Returns: The action to take based on the key that was pressed
  */
-char* determine_action(int pressed_key);
+char* determine_action(char pressed_key);
 
 /**
  * log_msg - This function is used to log a message to the console

@@ -31,6 +31,7 @@ void publish_pid_to_wd(char process_symbol, pid_t pid)
     // When all is done unlink from shm
 }
 
+// Writes message using the file descriptor provided.
 void write_to_pipe(int pipe_des, char message[])
 {
     ssize_t bytes_written = write(pipe_des, message, MSG_LEN);
@@ -41,6 +42,7 @@ void write_to_pipe(int pipe_des, char message[])
     }
 }
 
+// Writes the provided message into the logger.
 void write_message_to_logger(int who, int type, char *msg)
 {
     int shm_logs_fd = shm_open(SHAREMEMORY_LOGS, O_RDWR, 0666);
@@ -78,6 +80,7 @@ void error(char *msg)
     //exit(0);
 }
 
+// Reads a message from the pipe with select() system call.
 int read_pipe_non_blocking(int pipe_des, char *message[])
 {
     struct timeval timeout;
@@ -111,6 +114,7 @@ int read_pipe_non_blocking(int pipe_des, char *message[])
     }
 }
 
+// Reads a message from the socket, then does an echo.
 void read_and_echo(int socket, char socket_msg[])
 {
     int bytes_read, bytes_written;
@@ -143,6 +147,7 @@ void read_and_echo(int socket, char socket_msg[])
     printf("[SOCKET] Echo sent: %s\n", socket_msg);
 
 }
+// Reads a message from the socket, with select() system call, then does an echo.
 int read_and_echo_non_blocking(int socket, char socket_msg[])
 {
     int ready;
@@ -204,7 +209,7 @@ int read_and_echo_non_blocking(int socket, char socket_msg[])
         return 1;
     }
 }
-
+// Writes a message into the socket, then loops/waits until a valid echo is read.
 void write_and_wait_echo(int socket, char socket_msg[], size_t msg_size)
 {
     int ready;

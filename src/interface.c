@@ -82,11 +82,6 @@ int main(int argc, char *argv[])
     int score = 0;
     int counter = 0;
 
-    // Timeout
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
     // Targets and obstacles
     Targets targets[80];
     Targets original_targets[80];
@@ -140,22 +135,8 @@ int main(int argc, char *argv[])
         //////////////////////////////////////////////////////
         /* SECTION 2: READ THE DATA FROM SERVER*/
         /////////////////////////////////////////////////////
-
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(server_interface[0], &read_fds);
         
         char server_msg[MSG_LEN];
-
-        int ready;
-        do 
-        {
-            ready = select(server_interface[0] + 1, &read_fds, NULL, NULL, NULL);
-            if (ready == -1) 
-            {
-                perror("Error in select");
-            }
-        } while (ready == -1 && errno == EINTR);
 
         ssize_t bytes_read_drone = read(server_interface[0], server_msg, MSG_LEN);
         if (bytes_read_drone > 0) 
@@ -176,8 +157,8 @@ int main(int argc, char *argv[])
             }
         }
 
-        
-        if (obtained_targets == 0 && obtained_obstacles == 0)
+        // Re-read the pipe if neither targets nor obstacles have been obtained
+        if (obtained_targets == 0 || obtained_obstacles == 0)
         {
             continue;
         }
@@ -188,13 +169,8 @@ int main(int argc, char *argv[])
         /* SECTION 3: DATA ANALYSIS & GAME SCORE CALCULATION*/
         /////////////////////////////////////////////////////
 
-        /* UPDATE THE TARGETS ONCE THE DRONE REACHES THE CURRENT LOWEST NUMBER */
-        // Find the index of the target with the lowest ID
-        int lowest_index = find_lowest_ID(targets, number_targets);
-        // Obtain the coordinates of that target
-        char lowest_target[20];
 
-        // When there are no more targets, the game is finished.
+        // When there are no more targets, the score resets.
         if (number_targets == 0)
         {
             score = 0;
@@ -203,13 +179,20 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        sprintf(lowest_target, "%d,%d", targets[lowest_index].x, targets[lowest_index].y);
+        // Find the index of the target with the lowest ID
+        int lowest_index = find_lowest_ID(targets, number_targets);
+
+        // Obtain the coordinates of that target
+        char drone_msg[MSG_LEN];
+        sprintf(drone_msg, "%d,%d", targets[lowest_index].x, targets[lowest_index].y);
+        
         // Send to drone w/ serverless pipe lowest_target
-        write_to_pipe(interface_drone[1], lowest_target);
+        write_to_pipe(interface_drone[1], drone_msg);
 
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
-            calculate_score(&counter, &score, 1);
+            calculate_score(counter, &score, 1);
+            counter = 0;
             // Remove the target with the lowest ID
             remove_target(targets, &number_targets, lowest_index);
         }
@@ -219,6 +202,10 @@ int main(int argc, char *argv[])
         {
             calculate_score(&counter, &score, 0);
         }
+
+        // Counter/Timer linked to score calculations
+        counter++;
+        usleep(10000);
 
         //////////////////////////////////////////////////////
         /* SECTION 4: DRAW THE WINDOW & OBTAIN INPUT*/
@@ -230,22 +217,18 @@ int main(int argc, char *argv[])
         // Draws the window with the updated information of the terminal size, drone, targets, obstacles and score.
         draw_window(drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
 
-        /* HANDLE THE KEY PRESSED BY THE USER */
+        //////////////////////////////////////////////////////
+        /* SECTION 5: HANDLE THE KEY PRESSED BY USER */
+        /////////////////////////////////////////////////////
+
         int ch;
         if ((ch = getch()) != ERR)
         {
-            // Write char to the pipe
             char msg[MSG_LEN];
             sprintf(msg, "%c", ch);
-            // Send it directly to key_manager.c
             write_to_pipe(interface_km[1], msg);
         }
-
         flushinp(); // Clear the input buffer
-
-        // Counter/Timer linked to score calculations
-        counter++;
-        usleep(10000);
     }
 
     // Clean up and finish up resources taken by ncurses
@@ -266,16 +249,16 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        // Close file desciptors
+        // Close file desciptors and exit
         close(interface_km[1]);
         close(interface_drone[1]);
         close(server_interface[0]);
         close(interface_server[1]);
+
         exit(1);
     }
     if (signo == SIGUSR1)
     {
-        //TODO REFRESH SCREEN
         // Get watchdog's pid
         pid_t wd_pid = siginfo->si_pid;
         // inform on your condition
@@ -439,7 +422,7 @@ void draw_final_window(int score)
 */
 
 
-void calculate_score(int *counter, int *score, int operator)
+void calculate_score(int counter, int *score, int operator)
 {
     if (operator == 1)
     {
@@ -460,7 +443,6 @@ void calculate_score(int *counter, int *score, int operator)
             {  // Les than 5 seconds
                 score += 10;
             }
-            counter = 0;
     }
     else if (operator == 0)
     {

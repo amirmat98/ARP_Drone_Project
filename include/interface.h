@@ -23,9 +23,7 @@ void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets,
 
 void draw_final_window(int score);
 
-char* determine_action(int pressed_key, char *shared_action);
-
-void calculate_score(int *counter, int *score, int operator);
+void calculate_score(int counter, int *score, int operator);
 
 
 #endif //INTERFACE_H

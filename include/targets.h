@@ -2,7 +2,7 @@
 #define TARGET_H
 
 // User-defined parameters
-#define MAX_TARGETS 1
+#define MAX_TARGETS 5
 
 // Structure to represent a target
 typedef struct {

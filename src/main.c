@@ -1,11 +1,10 @@
 #include "main.h"
 #include "import.h"
 
-// Serverless pipes (fd)
-int interface_km[2];
-int interface_drone[2];
 
 // New pipes working with server (fd)
+int interface_km[2];    // Serverless pipes
+int interface_drone[2]; // Serverless pipes
 int km_server[2];
 int server_drone[2];
 int interface_server[2];
@@ -153,6 +152,12 @@ int main(int argc, char *argv[])
     number_process++;
     usleep(delay * 10); // little bit more time for server
 
+    /* Window - Interface */
+    char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL};
+    window_pid = create_child(window_args[0], window_args);
+    number_process++;
+    usleep(delay);
+
 
     /* Targets */
     char *targets_args[] = {"konsole", "-e", "./build/targets", targets_fds, NULL};
@@ -184,13 +189,6 @@ int main(int argc, char *argv[])
     number_process++;
     printf("Watchdog Created\n");
     
-
-    /* Window - Interface */
-    char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL};
-    window_pid = create_child(window_args[0], window_args);
-    number_process++;
-    usleep(delay);
-
 
     // /* Logger */ 
     // char* logger_args[] = {"konsole", "-e", "./build/logger", NULL};
@@ -247,31 +245,33 @@ int create_child(const char *program, char **arg_list)
 }
 
 void close_all_pipes()
-{
-    // Close all of the pipes
-    // Serverless pipes (fd)
+{ 
+    // Interface pipes
     close(interface_km[0]);
     close(interface_drone[0]);
     close(interface_km[1]);
     close(interface_drone[1]);
-
-    // New pipes working with server (fd)
-    close(km_server[0]);
-    close(server_drone[0]);
     close(interface_server[0]);
-    close(drone_server[0]);
-    close(server_interface[0]);
-    close(server_obstacles[0]);
-    close(obstacles_server[0]);
-    close(server_targets[0]);
-    close(targets_server[0]);
-    close(km_server[1]);
-    close(server_drone[1]);
     close(interface_server[1]);
+    // Keyboard Manager pipes
+    close(km_server[0]);
+    close(km_server[1]);
+    // Drone pipes
+    close(drone_server[0]);
     close(drone_server[1]);
+    // Server pipes
+    close(server_interface[0]);
     close(server_interface[1]);
+    close(server_drone[0]);
+    close(server_drone[1]);
+    close(server_obstacles[0]);
     close(server_obstacles[1]);
-    close(obstacles_server[1]);
+    close(server_targets[0]);
     close(server_targets[1]);
+    // Targets pipes
+    close(targets_server[0]);
     close(targets_server[1]);
+    // Obstacles pipes
+    close(obstacles_server[0]);
+    close(obstacles_server[1]);
 }

@@ -10,9 +10,11 @@ int obstacles_server[2];
 int main(int argc, char *argv[])
 {
     sleep(1);
+
+    // Read the file descriptors from the arguments
     get_args(argc, argv);
 
-    // Seed the random number generator
+    // Seed random number generator with current time
     srand(time(NULL));
 
     Obstacle obstacles[MAX_OBSTACLES];

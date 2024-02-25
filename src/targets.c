@@ -9,21 +9,19 @@ int main(int argc, char *argv[])
 {
     sleep(1);
 
+    // Read the file descriptors from the arguments
     get_args(argc, argv);
 
+    // Seed random number generator with current time
     srand(time(NULL));
-
-    // Timeout
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
 
     // To compare previous values
     bool obtained_dimensions = false;
     bool targets_created = false;;
 
     // Variables
-    int screen_size_x; int screen_size_y;
+    int screen_size_x; 
+    int screen_size_y;
     float scale_x;
     float scale_y;
 
@@ -118,9 +116,12 @@ int main(int argc, char *argv[])
         /* SECTION 2: READ THE DATA FROM SERVER*/
         /////////////////////////////////////////////////////
 
+        /* Because the targets process does not need to run continously, 
+        we may use a blocking-read for the socket */
+
         char socket_msg[MSG_LEN];
         // We use blocking read because targets do not not continous operation
-        read_and_echo_non_blocking(socket, socket_msg);
+        read_and_echo(socket, socket_msg);
 
         if (strcmp(socket_msg, "STOP") == 0)
         {

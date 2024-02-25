@@ -2,10 +2,8 @@
 #include "import.h"
 
 // Global variables for pipe descriptors to handle inter-process communication
-// Pipes working with the server
-int key_pressing_read;
-// Pipes working with the server
-int km_server_write;
+int interface_km;
+int km_server;
 
 int main(int argc, char *argv[])
 {
@@ -25,65 +23,40 @@ int main(int argc, char *argv[])
     // Main loop to process key presses indefinitely
     while(1)
     {
-        /*THIS SECTION IS FOR OBTAINING THE KEY INPUT CHARACTER*/
+        //////////////////////////////////////////////////////
+        /* SECTION 1: READ DATA FROM INTERFACE */
+        /////////////////////////////////////////////////////
 
-        fd_set readset_km;
-        // Initializes the file descriptor set readset by clearing all file descriptors from it.
-        FD_ZERO(&readset_km);
-        // Adds key_pressing to the file descriptor set readset.
-        FD_SET(key_pressing_read, &readset_km);
-
-        int ready;
-        // This waits until a key press is sent from (interface.c)
-        do
-        {
-            ready = select(key_pressing_read + 1, &readset_km, NULL, NULL, NULL);
-        } while (ready == -1 && errno == EINTR);
-
-        // Read from the file descriptor
-        int pressed_key = read_key_from_pipe(key_pressing_read);
-        printf("Pressed key: %c\n", (char)pressed_key); // Display the pressed key
+        char interface_msg[MSG_LEN];
+        ssize_t bytes_read = read(interface_km, interface_msg, MSG_LEN);
+        char pressed_key = interface_msg[0];
+        printf("Pressed key: %c\n", pressed_key);
+        // log_msg(msg_pressed_key); //
 
 
-        /*THIS SECTION IS FOR DRONE ACTION DECISION*/
+
+        //////////////////////////////////////////////////////
+        /* SECTION 2: DRONE ACTION SELECTION */
+        /////////////////////////////////////////////////////
 
         char *action = determine_action(pressed_key);
-        // printf("Action sent to drone: %s\n\n", action);
-        fflush(stdout);
 
-        /*
-        char key = toupper(pressed_key);
-        int x; int y;
-        // char action_msg[20];
-        */
-
-        // If the action is not "None", send it to the server
-        if (strcmp(action, "None") != 0) 
+        if (action != "None")
         {
-            write_to_pipe(km_server_write, action);
-            printf("Action sent to server: %s\n", action);
-        }         
+            write_to_pipe(km_server, action);
+            printf("[PIPE] SENT to server.c: %s\n", action);
+            // log_msg(msg);
+        }
     }
 
     return 0;
 
 }
 
-// Function to read a single character from a pipe
-int read_key_from_pipe (int pipe_des)
-{
-    char msg[MSG_LEN];  // Buffer to hold the message
-
-    ssize_t bytes_read = read(pipe_des, msg, sizeof(msg));  // Read from the pipe
-
-    int pressed_key = msg[0];
-    return pressed_key; // Return the first character read
-}
-
 // Parse the command line arguments to get pipe descriptors
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &key_pressing_read, &km_server_write);
+    sscanf(argv[1], "%d %d", &interface_km, &km_server);
 }
 
 
@@ -93,8 +66,8 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if  (signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        close(key_pressing_read);
-        close(km_server_write);
+        close(interface_km);
+        close(km_server);
         exit(1);
     }
     if (signo == SIGUSR1)
@@ -109,10 +82,12 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 
 // Determine the action string based on the pressed key
-char* determine_action(int pressed_key) 
+char* determine_action(char pressed_key) 
 {
     // Convert the pressed key to uppercase to handle both cases
     char key = toupper(pressed_key);
+
+    /* Returns are in the format "x,y" */ 
     // Switch on the uppercase character to determine the action
     switch (key) 
     {

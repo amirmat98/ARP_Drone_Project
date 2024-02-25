@@ -3,7 +3,6 @@
 
 #include <signal.h>
 
-#define SLEEP_TIME 500000  
 
 void get_args(int argc, char *argv[]);
 void signal_handler(int signo, siginfo_t *siginfo, void *context);
