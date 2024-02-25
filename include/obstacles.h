@@ -2,6 +2,7 @@
 #define OBSTACLES_H
 
 #include <time.h>
+#include <signal.h>
 
 // User-defined parameters
 #define MAX_OBSTACLES 5
@@ -32,6 +33,8 @@ void receive_message_from_server(char *message, int *x, int *y);
 Obstacle generate_obstacle(int x, int y);
 
 void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int x, int y);
+
+void signal_handler(int signo, siginfo_t *siginfo, void *context);
 
 
 #endif // OBSTACLES_H

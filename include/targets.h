@@ -1,6 +1,8 @@
 #ifndef TARGET_H
 #define TARGET_H
 
+#include <signal.h>
+
 // User-defined parameters
 #define MAX_TARGETS 5
 
@@ -53,6 +55,10 @@ Target generate_target(int order, int screen_size_x, int screen_size_y);
  * @param message pointer to a character array to store the output message
  */
 void make_target_msg(Target *targets, char *message);
+
+void signal_handler(int signo, siginfo_t *siginfo, void *context);
+
+void clean_up();
 
 
 #endif // TARGET_H
