@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     sa.sa_flags = SA_SIGINFO;
     sigaction (SIGINT, &sa, NULL);
     sigaction (SIGUSR1, &sa, NULL);   
-    publish_pid_to_wd(KM_SYM, getpid());
+    publish_pid_to_wd(TARGETS_SYM, getpid());
 
     // Seed random number generator with current time
     srand(time(NULL));
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     /* SOCKET INITIALIZATION */
     /////////////////////////////////////////////////////
 
-    int socket, port_number, n;
+    int port_number, n;
     struct sockaddr_in server_address;
     struct hostent *server;
 
@@ -153,6 +153,8 @@ int main(int argc, char *argv[])
         // Delay
         // usleep(200000); // 200ms
     }
+    clean_up();
+
     return 0;
 
 }
@@ -164,8 +166,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if  (signo == SIGINT)
     {
         printf("Caught SIGINT \n");
-        close(targets_server[1]);
-        close(server_targets[0]);
+        clean_up();
         exit(1);
     }
     if (signo == SIGUSR1)
@@ -247,4 +248,11 @@ void make_target_msg(Target *targets, char *message)
     }
     message[offset] = '\0'; // Null-terminate the string
     printf("%s\n", message);
+}
+
+void clean_up()
+{
+    close(socket);
+    close(server_targets[0]);
+    close(targets_server[1]);
 }

@@ -91,9 +91,9 @@ int main(int argc, char* argv[])
 
     // Get pid of the processes
     get_pids(&server_pid, &interface_pid, &km_pid, &drone_pid, &obstacles_pid, &targets_pid);
-    printf("WD PID IS: %d\n", wd_pid);
+    printf(" PID of WD: %d\n", wd_pid);
 
-    /*TODO: remove hardcoded values in WATCHDOG */
+    
     cnt_server = 0;
     cnt_window = 0;
     cnt_km = 0;
@@ -104,7 +104,40 @@ int main(int argc, char* argv[])
 
     while(1)
     {
-        usleep(100000);
+        
+        cnt_server++;
+        cnt_window++;
+        cnt_km++;
+        cnt_drone++;
+        cnt_obstacles++;
+        cnt_targets++;
+        /* cnt_logger++; */
+
+        /* Monitor health of all of the processes */
+        kill(server_pid, SIGUSR1);
+        usleep(500);
+        kill(interface_pid, SIGUSR1);
+        usleep(500);
+        kill(km_pid, SIGUSR1);
+        usleep(500);
+        kill(drone_pid, SIGUSR1);
+        usleep(500);
+        kill(targets_pid, SIGUSR1);
+        usleep(500);
+        kill(obstacles_pid, SIGUSR1);
+        usleep(500);
+
+        /* kill(logger_pid, SIGUSR1); */
+
+
+
+        // If any of the processess does not respond in given timeframe, close them all
+        if (cnt_server > THRESHOLD || cnt_window > THRESHOLD || cnt_km > THRESHOLD || cnt_drone > THRESHOLD ||
+            cnt_targets > THRESHOLD || cnt_obstacles > THRESHOLD /*|| cnt_logger > THRESHOLD */)
+        {
+            send_sigint_to_all();
+        }
+        usleep(1000000);
     }
 
     return 0;

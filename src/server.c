@@ -23,6 +23,15 @@ sem_t *sem_logs_1, *sem_logs_2, *sem_logs_3;    // Semaphores for logger
 sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
 
 
+// Sockets
+int obstacles_socket;
+int targets_socket;
+int socket;
+int new_socket;
+int port_number;
+int client_len;
+int pid;
+
 int main(int argc, char *argv[])
 {
 
@@ -98,7 +107,8 @@ int main(int argc, char *argv[])
 
     int obstacles_socket = 0;
     int targets_socket = 0;
-    int socket, new_socket, prot_number, client_len, pid;
+    int socket = 0;
+    int new_socket = 0;
     struct socket_addr_in server_address, client_address;
 
     socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -341,9 +351,14 @@ void clean_up()
     // unmap shared memory
     munmap(ptr_wd, SIZE_SHM);
 
-
     // unlink shared memories
     shm_unlink(SHAREMEMORY_WD);
+
+    // close all sockets
+    close(socket);
+    close(targets_socket);
+    close(obstacles_socket);
+    close(new_socket);
 
     printf("Clean up has been performed succesfully\n");
 }

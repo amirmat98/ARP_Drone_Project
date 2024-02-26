@@ -310,6 +310,12 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if( signo == SIGINT)
     {
         printf("Caught SIGINT \n");
+        close(drone_server[0]);
+        close(drone_server[1]);
+        close(interface_drone[0]);
+        close(interface_drone[1]);
+        close(server_drone[0]);
+        close(server_drone[1]);
         printf("Succesfully closed all semaphores\n");
         exit(1);
     }
