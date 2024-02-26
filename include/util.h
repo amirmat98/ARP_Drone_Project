@@ -20,5 +20,8 @@ int read_and_echo_non_blocking(int socket, char socket_msg[]);
 
 void write_and_wait_echo(int socket, char socket_msg[], size_t msg_len);
 
+void read_args_from_file(const char *file_name, char *type, char *data);
+
+void parse_host_port(const char *str, char *host, int *port);
 
 #endif // UTIL_H

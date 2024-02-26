@@ -1,2 +1,4 @@
 #1 change messages in all files and server files (it's Not possible to change)
-#2 make read function in util
+#2 make read function in util for Assignment 2
+#3 change check error function
+

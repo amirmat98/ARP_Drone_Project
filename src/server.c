@@ -40,6 +40,23 @@ int main(int argc, char *argv[])
     // Read the file descriptors from the arguments
     get_args(argc, argv);
 
+    // Set Configuration
+    char program_type[MSG_LEN];
+    char socket_data[MSG_LEN];
+    read_args_from_file("./src/configuration.txt", program_type, socket_data);
+    char host_name[MSG_LEN];
+    int port_num;
+    printf("Program type: %s\n", program_type);
+
+    parse_host_port(socket_data, host_name, &port_num);
+    printf("Host name: %s\n", host_name);
+    printf("Port number: %d\n", port_num);
+
+    if (strcmp(program_type, "server") == 0)
+    {
+        exit(0);
+    }
+
     // Signals
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
@@ -116,8 +133,10 @@ int main(int argc, char *argv[])
     {
         perror("Error opening socket");
     }
+    
+    prot_number = port_num; // Port number
+    
     bzero((char*) &server_address, sizeof(server_address));
-    prot_number = PORT_NUMBER; // Port number
     server_address.sin_family = AF_INET;
     servent_address.sin_port.s_addr = INADDR_ANY;
     server_address.sin_port = htons(prot_number);

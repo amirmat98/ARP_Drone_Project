@@ -11,6 +11,23 @@ int main(int argc, char *argv[])
 {
     sleep(1);
 
+    // Set Configuration
+    char program_type[MSG_LEN];
+    char socket_data[MSG_LEN];
+    read_args_from_file("./src/configuration.txt", program_type, socket_data);
+    char host_name[MSG_LEN];
+    int port_num;
+    printf("Program type: %s\n", program_type);
+
+    parse_host_port(socket_data, host_name, &port_num);
+    printf("Host name: %s\n", host_name);
+    printf("Port number: %d\n", port_num);
+
+    if (strcmp(program_type, "server") == 0)
+    {
+        exit(0);
+    }
+
     // Read the file descriptors from the arguments
     get_args(argc, argv);
 
@@ -48,14 +65,14 @@ int main(int argc, char *argv[])
     struct sockaddr_in server_address;
     struct hostent *server_host;
 
-    prot_number = PORT_NUMBER; // Port number
+    prot_number = port_num; // Port number
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
         perror("Error opening socket");
         // exit(1);
     }
-    server = gethostbyname("localhost");
+    server = gethostbyname(host_name);
     if (server == NULL)
     {
         fprintf(stderr, "Error, no host named 'localhost'.\n");

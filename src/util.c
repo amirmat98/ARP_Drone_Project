@@ -212,33 +212,90 @@ int read_and_echo_non_blocking(int socket, char socket_msg[])
 // Writes a message into the socket, then loops/waits until a valid echo is read.
 void write_and_wait_echo(int socket, char socket_msg[], size_t msg_size)
 {
-    int ready;
+    int correct_echo = 0;
     int bytes_read, bytes_written;
+    char response_msg[MSG_LEN];
 
-    bytes_written = write(socket, socket_msg, msg_size);
-    if (bytes_written < 0)
+
+    while(correct_echo == )
     {
-        perror("ERROR writing to socket");
+        bytes_written = write(socket, socket_msg, msg_size);
+        if (bytes_written < 0)
+        {
+            perror("ERROR writing to socket");
+        }
+        printf("[SOCKET] Sent: %s\n", socket_msg);
+
+        // Clear the buffer
+        bzero(response_msg, MSG_LEN);
+
+        while(response_msg[0] == '\0')
+        {
+            // Data is available for reading, so read from the socket
+            bytes_read = read(socket, response_msg, bytes_written);
+            if (bytes_read < 0)
+            {
+                perror("ERROR reading from socket");
+            }
+            else if (bytes_read == 0)
+            {
+                printf("Connection closed\n");
+                return;
+            }
+        }
+
+        if (strcmp(socket_msg, response_msg) == 0)
+        {
+            // Pront the received message
+            printf("[SOCKET] Echo received: %s\n", response_msg);
+            correct_echo = 1;
+        }
     }
-    printf("[SOCKET] Sent: %s\n", socket_msg);
+}
 
-    // Clear the buffer
-    bzero(socket_msg, MSG_LEN);
 
-    while(socket_msg[0] == '\0')
+// Reads the first line of uncommented text from a file
+void read_args_from_file(const char *file_name, char *type, char *data)
+{
+    FILE *file = fopen(file_name, "r");
+    if (file == NULL)
     {
-        // Data is available for reading, so read from the socket
-        bytes_read = read(socket, socket_msg, bytes_written);
-        if (bytes_read < 0)
+        fprintf(stderr, "Error opening file %s\n", file_name);
+    }
+
+    // Read lines until findging a non-comment line
+    char line[MSG_LEN];
+    while(fgets(line, sizeof(line), file)!= NULL)
+    {
+        // Skip comments lines
+        if (line[0] != '#')
         {
-            perror("ERROR reading from socket");
-        }
-        else if (bytes_read == 0)
-        {
-            printf("Connection closed\n");
-            return;
+            // Tokenize the line
+            char *token = strtok(line, " \t\n");
+            token = strtok(NULL, " \t\n");
+            if (token != NULL)
+            {
+                strncpy(data, token, MSG_LEN);
+                fclose(file);
+                return;
+            }
         }
     }
-    // Print the received message
-    printf("[SOCKET] Echo received: %s\n", socket_msg);
+}
+
+// Obtains both the host name and the port number from a formatted string
+void parse_host_port(const char *str, char *host, int *port)
+{
+    char *colon = strchr(str, ':');
+    if (colon == NULL)
+    {
+        fprintf(stderr, "Invalid input: No colon found\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int len = colon - str;
+    strncpy(host, str, len);
+    host[len] = '\0';
+
+    *port = atoi(colon + 1);
 }
