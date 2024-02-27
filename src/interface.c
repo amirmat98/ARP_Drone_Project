@@ -196,7 +196,27 @@ int main(int argc, char *argv[])
 
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
-            calculate_score(counter, &score, 1);
+            
+            //calculate_score(counter, &score, 1);
+
+            // Update score and counter (reset timer)
+            if (counter > 1500)
+            { // 1500 * 10ms = 15 seconds
+                score += 2;
+            }
+            else if (counter > 1000)
+            { // 1000 * 10ms = 10 seconds
+                score += 4;
+            }
+            else if (counter > 500)
+            { // 500 * 10ms = 5 seconds
+                score += 6;
+            }
+            else
+            { // Les than 5 seconds
+                score += 10;
+            }
+
             counter = 0;
             // Remove the target with the lowest ID
             remove_target(targets, &number_targets, lowest_index);
@@ -205,7 +225,8 @@ int main(int argc, char *argv[])
         // Check if the drone has crashed into an obstacle
         if (check_collision_drone_obstacle(obstacles, number_obstacles, drone_x, drone_y))
         {
-            calculate_score(counter, &score, 0);
+            score -= 5;
+            // calculate_score(counter, &score, 0);
         }
 
         // Counter/Timer linked to score calculations
@@ -405,23 +426,23 @@ void calculate_score(int counter, int *score, int operator)
 {
     if (operator == 1)
     {
-            // Update score and counter (reset timer)
-            if (counter > 1500) 
-            {  // 1500 * 10ms = 15 seconds 
-                score += 2;
-            }
-            else if (counter > 1000) 
-            {   // 1000 * 10ms = 10 seconds
+        // Update score and counter (reset timer)
+        if (counter > 1500) 
+        {  // 1500 * 10ms = 15 seconds 
+            score += 2;
+        }
+        else if (counter > 1000) 
+        {   // 1000 * 10ms = 10 seconds
                 score += 4;
-            }
-            else if (counter > 500) 
-            {   // 500 * 10ms = 5 seconds 
+        }
+        else if (counter > 500) 
+        {   // 500 * 10ms = 5 seconds 
                 score += 6;
-            }
-            else 
-            {  // Les than 5 seconds
+        }
+        else 
+        {  // Les than 5 seconds
                 score += 10;
-            }
+        }
     }
     else if (operator == 0)
     {
