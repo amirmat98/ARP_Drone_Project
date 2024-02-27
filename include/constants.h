@@ -2,7 +2,7 @@
 #define CONSTANTS_H
 
 // Pipes Constants
-#define MSG_LEN 1024
+#define MSG_LEN 256
 
 // Length for logfiles
 #define LOG_LEN 256
@@ -23,7 +23,7 @@
 // Special value to indicate no key pressed
 #define NO_KEY_PRESSED 0
 
-// SYMBOLS FOR WATCHDOG & LOGGER
+// SYMBOLS FOR WATCHDOG
 #define SERVER_SYM 1
 #define WINDOW_SYM 2
 #define KM_SYM 3
@@ -32,6 +32,15 @@
 #define WD_SYM 6
 #define OBSTACLES_SYM 7
 #define TARGETS_SYM 8
+
+// STRINGS FOR LOGS
+#define SERVER "SERVER"
+#define INTERFACE "INTERFACE"
+#define KM "KEY MANAGER"
+#define DRONE "DRONE"
+#define WD "WATCHDOG"
+#define OBS "OBSTACLES"
+#define TARGETS "TARGETS"
 
 // SYMBOLS FOR LOG TYPES
 #define INFO 1

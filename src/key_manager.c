@@ -5,6 +5,9 @@
 int interface_km;
 int km_server;
 
+char log_file[80];
+char msg[1024];
+
 int main(int argc, char *argv[])
 {
     // Initialize the program by parsing command line arguments
@@ -30,8 +33,9 @@ int main(int argc, char *argv[])
         char interface_msg[MSG_LEN];
         ssize_t bytes_read = read(interface_km, interface_msg, MSG_LEN);
         char pressed_key = interface_msg[0];
-        printf("Pressed key: %c\n", pressed_key);
-        // log_msg(msg_pressed_key); //
+        // printf("Pressed key: %c\n", pressed_key);
+        sprintf(msg, "Pressed key: %c\n", pressed_key);
+        log_msg(log_file, KM, msg);
 
 
 
@@ -44,8 +48,9 @@ int main(int argc, char *argv[])
         if (action != "None")
         {
             write_to_pipe(km_server, action);
-            printf("[PIPE] SENT to server.c: %s\n", action);
-            // log_msg(msg);
+            // printf("[PIPE] SENT to server.c: %s\n", action);
+            sprintf(msg, "[PIPE] SENT to server.c: %s\n", action);
+            log_msg(log_file, KM, msg);
         }
     }
 
@@ -56,7 +61,7 @@ int main(int argc, char *argv[])
 // Parse the command line arguments to get pipe descriptors
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &interface_km, &km_server);
+    sscanf(argv[1], "%d %d %s", &interface_km, &km_server, log_file);
 }
 
 
@@ -65,7 +70,8 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     // printf("Received signal number: %d \n", signo);
     if  (signo == SIGINT)
     {
-        printf("Caught SIGINT \n");
+        sprintf(msg, "Caught SIGINT \n");
+        log_msg(log_file, KM, msg);
         close(interface_km);
         close(km_server);
         exit(1);
@@ -103,11 +109,4 @@ char* determine_action(char pressed_key)
         case 'P': return "STOP"; // Special value interpreted by server.c process
         default: return "None"; // If norecognized key, return "None" indicating no action
     }
-}
-
-// Utility function to log a message with a given log level
-void log_msg(char *msg)
-{
-    // Sends a message to logger with the 'INFO' log level
-    write_message_to_logger(KM_SYM, INFO, msg);
 }

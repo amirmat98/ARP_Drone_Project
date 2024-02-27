@@ -6,9 +6,15 @@
 int server_obstacles[2];
 int obstacles_server[2];
 
+char log_file[80];
+char msg[1024];
+
 
 int main(int argc, char *argv[])
 {
+    // Read the file descriptors from the arguments
+    get_args(argc, argv);
+
     sleep(1);
 
     // Set Configuration
@@ -17,19 +23,24 @@ int main(int argc, char *argv[])
     read_args_from_file("./src/configuration.txt", program_type, socket_data);
     char host_name[MSG_LEN];
     int port_num;
-    printf("Program type: %s\n", program_type);
+    // printf("Program type: %s\n", program_type);
+    sprintf(msg, "Program type: %s\n", program_type);
+    log_msg(log_file, OBS, msg);
 
     parse_host_port(socket_data, host_name, &port_num);
-    printf("Host name: %s\n", host_name);
-    printf("Port number: %d\n", port_num);
+    // printf("Host name: %s\n", host_name);
+    // printf("Port number: %d\n", port_num);
+
+    sprintf(msg, "Host name: %s\n", host_name);
+    log_msg(log_file, OBS, msg);
+
+    sprintf(msg, "Port number: %d\n", port_num);
+    log_msg(log_file, OBS, msg);
 
     if (strcmp(program_type, "server") == 0)
     {
         exit(0);
     }
-
-    // Read the file descriptors from the arguments
-    get_args(argc, argv);
 
     // Signals
     struct sigaction sa;
@@ -100,7 +111,7 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////
 
     char init_msg[] = "OI"; // Adjust the size based on your requirements
-    write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg));
+    write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg), log_file, OBS);
 
     //////////////////////////////////////////////////////
     /* OBTAIN DIMENSIONS */
@@ -110,6 +121,7 @@ int main(int argc, char *argv[])
     float temp_scx, temp_scy;
     char dimension_msg[MSG_LEN];
     read_and_echo(socket_fd, dimension_msg);
+    log_msg(log_file, "OBSTACLES - SOCKET", dimension_msg);
 
     sscanf(dimension_msg, "%f,%f", &temp_scx, &temp_scy);
     screen_size_x = (int)temp_scx;
@@ -123,12 +135,16 @@ int main(int argc, char *argv[])
         /////////////////////////////////////////////////////
 
         char socket_msg[MSG_LEN]; // Adjust the size based on your requirements
-        read_and_echo_non_blocking(socket_fd, socket_msg);
+        read_and_echo_non_blocking(socket_fd, socket_msg, log_file, OBS);
         
         if (strcmp(socket_msg, "STOP") == 0)
         {
-            printf("STOP RECEIVED FROM SERVER!\n");
-            printf("This process will close in 5 seconds...\n");
+            // printf("STOP RECEIVED FROM SERVER!\n");
+            // printf("This process will close in 5 seconds...\n");
+            sprintf(msg,"STOP RECEIVED FROM SERVER!");
+            log_msg(logfile, OBS, msg);
+            sprintf(msg,"This process will close in 5 seconds...");
+            log_msg(logfile, OBS, msg);
             fflush(stdout);
             sleep(5);
             exit(0);
@@ -156,7 +172,7 @@ int main(int argc, char *argv[])
         check_obstacles_spawn_time(obstacles, number_obstacles, screen_size_x, screen_size_y);
 
         // SEND DATA TO SERVER
-        write_and_wait_echo(socket_fd, obstacles_msg, sizeof(obstacles_msg));
+        write_and_wait_echo(socket_fd, obstacles_msg, sizeof(obstacles_msg), log_file, "OBSTSACLES");
 
     }
 
@@ -170,6 +186,8 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if  (signo == SIGINT)
     {
         printf("Caught SIGINT \n");
+        sprintf(msg, "Caught SIGINT");
+        log_msg(logfile, OBS, msg);
         close(obstacles_server[1]);
         close(server_obstacles[0]);
         exit(1);
@@ -201,13 +219,15 @@ void print_obstacles(Obstacle obstacles[], int number_obstacles, char obstacles_
         }
     }
     printf("%s\n", obstacles_msg);
+    sprintf(msg, "Generated Obstacles - %s\n", obstacles_msg);
+    log_msg(log_file, OBS, msg);
     fflush(stdout);
 }
 
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &server_obstacles[0], &obstacles_server[1]);
+    sscanf(argv[1], "%d %d %s", &server_obstacles[0], &obstacles_server[1], log_file);
 }
 
 void receive_message_from_server(char *message, int *x, int *y)

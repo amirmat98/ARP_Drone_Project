@@ -25,25 +25,8 @@ pid_t logger_pid;
 pid_t targets_pid;
 pid_t obstacles_pid;
 
-void signal_handler(int signo, siginfo_t *siginfo, void *context)
-{
-    if (signo == SIGINT)
-    {
-        printf("Caught SIGINT, killing all children... \n");
-        kill(server_pid, SIGKILL);
-        kill(window_pid, SIGKILL);
-        kill(km_pid, SIGKILL);
-        kill(drone_pid, SIGKILL);
-        kill(wd_pid, SIGKILL);
-        kill(logger_pid, SIGKILL);
-        kill(targets_pid, SIGKILL);
-        kill(obstacles_pid, SIGKILL);
-        printf("Closing all pipes.. \n");
-        close_all_pipes();
-
-        exit(1);
-    }
-}
+FILE *log_file;
+char log_file_path[80];
 
 int main(int argc, char *argv[])
 {
@@ -116,31 +99,35 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    // Create Log File
+    create_logfile();
+    log_msg(log_file_path, "MAIN", "All processes created");
+
     // Passing file descriptors for pipes used on server.c
-    char server_fds[80];
-    sprintf(server_fds, "%d %d %d %d %d %d %d %d %d", km_server[0], server_drone[1], 
+    char server_fds[160];
+    sprintf(server_fds, "%d %d %d %d %d %d %d %d %d %s", km_server[0], server_drone[1], 
     interface_server[0], drone_server[0], server_interface[1], server_obstacles[1], 
-    obstacles_server[0], server_targets[1], targets_server[0]);
+    obstacles_server[0], server_targets[1], targets_server[0], log_file_path);
 
     // Passing file descriptors for pipes used on key_manager.c
-    char key_manager_fds[80];
-    sprintf(key_manager_fds, "%d %d", interface_km[0], km_server[1]);
+    char key_manager_fds[160];
+    sprintf(key_manager_fds, "%d %d %s", interface_km[0], km_server[1], log_file_path);
 
     // Passing file descriptors for pipes used on interface.c
-    char interface_fds[80];
-    sprintf(interface_fds, "%d %d %d %d", interface_km[1], server_interface[0], interface_server[1], interface_drone[1]);
+    char interface_fds[160];
+    sprintf(interface_fds, "%d %d %d %d %s", interface_km[1], server_interface[0], interface_server[1], interface_drone[1], log_file_path);
 
     // Passing file descriptors for pipes used on drone.c
-    char drone_fds[80];
-    sprintf(drone_fds, "%d %d %d", server_drone[0], drone_server[1], interface_drone[0]);
+    char drone_fds[160];
+    sprintf(drone_fds, "%d %d %d %s", server_drone[0], drone_server[1], interface_drone[0], log_file_path);
 
     // Passing file descriptors for pipes used on obstacles.c
-    char obstacles_fds[80];
-    sprintf(obstacles_fds, "%d %d", server_obstacles[0], obstacles_server[1]);
+    char obstacles_fds[160];
+    sprintf(obstacles_fds, "%d %d %s", server_obstacles[0], obstacles_server[1], log_file_path);
 
     // Passing file descriptors for pipes used on targets.c
-    char targets_fds[80];
-    sprintf(targets_fds, "%d %d", server_targets[0], targets_server[1]);
+    char targets_fds[160];
+    sprintf(targets_fds, "%d %d", server_targets[0], targets_server[1], log_file_path);
 
     int delay = 100000; // Time delay between next spawns
     int number_process = 0; //number of processes
@@ -170,7 +157,8 @@ int main(int argc, char *argv[])
     usleep(delay);
 
     /* Keyboard manager */
-    char *km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_fds, NULL};
+    // char *km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_fds, NULL};
+    char *km_args[] = {"./build/key_manager", key_manager_fds, NULL};
     km_pid = create_child(km_args[0], km_args);
     number_process++;
     usleep(delay);
@@ -182,17 +170,12 @@ int main(int argc, char *argv[])
     usleep(delay);
 
     /* Watchdog */
-    char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL};
+    // char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL};
+    char *wd_args[] = {"konsole", "-e", "./build/watchdog", logfile_path, NULL};
     wd_pid = create_child(wd_args[0], wd_args);
     number_process++;
     printf("Watchdog Created\n");
     
-
-    // /* Logger */ 
-    // char* logger_args[] = {"konsole", "-e", "./build/logger", NULL};
-    // logger_pid = create_child(logger_args[0], logger_args);
-    // number_process++;
-    // usleep(delay);
 
     /* Wait for all children to close */
     for (int i = 0; i < number_process; i++)
@@ -208,20 +191,30 @@ int main(int argc, char *argv[])
 
     printf("All child processes closed, closing main process...\n");
 
-    close_all_pipes();
+    clean_up();
 
     return 0;
 
 }
 
-/*
-void create_pipes()
+void signal_handler(int signo, siginfo_t *siginfo, void *context)
 {
-    pipe(key_pressing);
-
-    printf("Pipes Succesfully created");
+    if (signo == SIGINT)
+    {
+        printf("Caught SIGINT, killing all children... \n");
+        kill(server_pid, SIGKILL);
+        kill(window_pid, SIGKILL);
+        kill(km_pid, SIGKILL);
+        kill(drone_pid, SIGKILL);
+        kill(wd_pid, SIGKILL);
+        kill(logger_pid, SIGKILL);
+        kill(targets_pid, SIGKILL);
+        kill(obstacles_pid, SIGKILL);
+        printf("Closing all pipes.. \n");
+        cleanup();
+        exit(1);
+    }
 }
-*/
 
 int create_child(const char *program, char **arg_list)
 {
@@ -242,7 +235,7 @@ int create_child(const char *program, char **arg_list)
     }
 }
 
-void close_all_pipes()
+void clean_up()
 { 
     // Interface pipes
     close(interface_km[0]);
@@ -272,4 +265,32 @@ void close_all_pipes()
     // Obstacles pipes
     close(obstacles_server[0]);
     close(obstacles_server[1]);
+}
+
+void create_logfile()
+{
+    /* Create Logfile */
+    time_t current_time;
+    struct tm *time_info;
+    char file_name[40];  // Buffer to hold the filename
+
+    time(&current_time);
+    time_info = localtime(&current_time);
+
+    // Format time into a string: "logfile_YYYYMMDD_HHMMSS.txt"
+    strftime(file_name, sizeof(file_name), "logfile_%Y%m%d_%H%M%S.txt", time_info);
+
+    char directory[] = "build/logs";
+    sprintf(log_file_path, "%s/%s", directory, file_name);
+
+    // Create the logfile
+    log_file = fopen(log_file_path, "a");
+
+    if (log_file == NULL)
+    {
+        perror("Unable to open the log file.");
+        exit(1);
+    }
+    // close logfile
+    fclose(log_file);
 }

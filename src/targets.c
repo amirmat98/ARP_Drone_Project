@@ -8,8 +8,15 @@ int targets_server[1];
 // Sockets
 int socket_fd;
 
+char log_file[80];
+char msg[1024];
+
 int main(int argc, char *argv[])
 {
+
+    // Read the file descriptors from the arguments
+    get_args(argc, argv);
+
     sleep(1);
 
     // Set Configuration
@@ -19,19 +26,23 @@ int main(int argc, char *argv[])
     char host_name[MSG_LEN];
     int port_num;
     printf("Program type: %s\n", program_type);
+    sprintf(msg, "Program type: %s\n", program_type);
+    log_msg(log_file, TARGETS, msg);
 
     parse_host_port(socket_data, host_name, &port_num);
     printf("Host name: %s\n", host_name);
     printf("Port number: %d\n", port_num);
+    sprintf(msg, "Host name: %s\n", host_name);
+    log_msg(log_file, TARGETS, msg);
+    sprintf(msg, "Port number: %d\n", port_num);
+    log_msg(log_file, TARGETS, msg);
+
 
 
     if (strcmp(program_type, "server") == 0)
     {
         exit(0);
     }
-
-    // Read the file descriptors from the arguments
-    get_args(argc, argv);
 
     // Signals
     struct sigaction sa;
@@ -97,7 +108,8 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////
 
     char init_msg[] = "TI";
-    write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg));
+    write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg), log_file, TARGETS);
+    log_msg(log_file, TARGETS, init_msg);
 
     //////////////////////////////////////////////////////
     /* OBTAIN DIMENSIONS */
@@ -142,7 +154,7 @@ int main(int argc, char *argv[])
             make_target_msg(targets, targets_msg);
 
             // Send the data to the server
-            write_and_wait_echo(socket_fd, targets_msg, sizeof(targets_msg));
+            write_and_wait_echo(socket_fd, targets_msg, sizeof(targets_msg), log_file, TARGETS);
             // write_to_pipe(targets_server[1], targets_msg);
             targets_created = true;
         }
@@ -161,9 +173,11 @@ int main(int argc, char *argv[])
 
         if (strcmp(socket_msg, "STOP") == 0)
         {
-            printf("STOP RECEIVED FROM SERVER!\n");
-            printf("This program will close in 5 seconds!\n");
-            fflush(stdout);
+            sprintf(msg,"STOP RECEIVED FROM SERVER!\n");
+            log_msg(log_file, TARGETS, msg);
+
+            sprintf(msg, "This process will close in 5 seconds...\n");
+            log_msg(log_file, TARGETS, msg);
             sleep(5);
             exit(0);
         }
@@ -190,7 +204,8 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     // printf("Received signal number: %d \n", signo);
     if  (signo == SIGINT)
     {
-        printf("Caught SIGINT \n");
+        sprintf(msg, "Caught SIGINT \n");
+        log_msg(log_file, TARGETS, msg);
         clean_up();
         exit(1);
     }
@@ -212,7 +227,7 @@ void generate_random_cordinates(int sector_width, int sector_height, int *x, int
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d", &server_targets[0], &targets_server[1]);
+    sscanf(argv[1], "%d %d %s", &server_targets[0], &targets_server[1], log_file);
 }
 
 void generate_random_order(int *order, int max_targets)

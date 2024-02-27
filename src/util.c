@@ -30,6 +30,33 @@ void publish_pid_to_wd(int process_symbol, pid_t pid)
     // When all is done unlink from shm
 }
 
+void log_msg(char *file_path, char* who, char *message)
+{
+    // Open the file
+    FILE *file_fd = fopen(file_path, "a");
+    if (file_fd == NULL)
+    {
+        perror("Logfile open failed!");
+        exit(1);
+    }
+    
+    // Get the current time
+    time_t currentTime;
+    time(&currentTime);
+    struct tm *localTime = localtime(&currentTime);
+    int hours = localTime->tm_hour;
+    int minutes = localTime->tm_min;
+    int seconds = localTime->tm_sec;
+    
+    char time[80];
+    char *eol = "\n";
+    sprintf(time, "%02d:%02d:%02d", hours, minutes, seconds);
+    
+    fprintf(file_fd, "[INFO][%s] at [%s:] %s", who, time, message);
+    fclose(file_fd); //close file at the end
+    message = ""; // clear the buffer
+}
+
 // Writes message using the file descriptor provided.
 void write_to_pipe(int pipe_des, char message[])
 {
@@ -97,7 +124,7 @@ void read_and_echo(int socket_des, char socket_msg[])
         return; // Empty message
     }
 
-    printf("[SOCKET] Received: %s\n", socket_msg);
+    // printf("[SOCKET] Received: %s\n", socket_msg);
     
     // Echo data read into socket
     bytes_written = write(socket_des, socket_msg, bytes_read);
@@ -105,11 +132,11 @@ void read_and_echo(int socket_des, char socket_msg[])
     {
         perror("ERROR writing to socket");
     }
-    printf("[SOCKET] Echo sent: %s\n", socket_msg);
+    // printf("[SOCKET] Echo sent: %s\n", socket_msg);
 
 }
 // Reads a message from the socket, with select() system call, then does an echo.
-int read_and_echo_non_blocking(int socket_des, char socket_msg[])
+int read_and_echo_non_blocking(int socket_des, char socket_msg[], char* log_file,char *log_who)
 {
     int ready;
     int bytes_read, bytes_written;
@@ -156,7 +183,10 @@ int read_and_echo_non_blocking(int socket_des, char socket_msg[])
     }
 
     // Print the received message
-    printf("[SOCKET] Received: %s\n", socket_msg);
+    // printf("[SOCKET] Received: %s\n", socket_msg);
+    char msg_logs[1024];
+    sprintf(msg_logs, "[SOCKET] Received: %s\n", socket_msg);
+    log_msg(log_file, log_who, msg_logs);
 
     // Echo the message back to the client.
     bytes_written = write(socket_des, socket_msg, bytes_read);
@@ -166,17 +196,19 @@ int read_and_echo_non_blocking(int socket_des, char socket_msg[])
     }
     else
     {
-        printf("[SOCKET] Echo sent: %s\n", socket_msg);
+        sprintf(msg_logs,"[SOCKET] Echo sent: %s\n", socket_msg);
+        log_msg(log_file, log_who, msg_logs);
         return 1;
     }
 }
 // Writes a message into the socket, then loops/waits until a valid echo is read.
-void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size)
+void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size, char *log_file, char* log_who)
 {
     int correct_echo = 0;
     int bytes_read, bytes_written;
     char response_msg[MSG_LEN];
 
+    char msg[1024];
 
     while(correct_echo == 0)
     {
@@ -185,7 +217,8 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size)
         {
             perror("ERROR writing to socket");
         }
-        printf("[SOCKET] Sent: %s\n", socket_msg);
+        sprintf(msg, "[SOCKET] Sent: %s\n", socket_msg);
+        log_msg(log_file, log_who, msg);
 
         // Clear the buffer
         bzero(response_msg, MSG_LEN);
@@ -208,7 +241,8 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size)
         if (strcmp(socket_msg, response_msg) == 0)
         {
             // Print the received message
-            printf("[SOCKET] Echo received: %s\n", response_msg);
+            sprintfmsg, ("[SOCKET] Echo received: %s\n", response_msg);
+            log_msg(log_file, log_who, msg);
             correct_echo = 1;
         }
     }

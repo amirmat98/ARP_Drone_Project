@@ -29,6 +29,9 @@ int targets_socket;
 int socket_fd;
 int new_socket_fd, port_number, client_len ,pid;
 
+char log_file[80];
+char msg[1024];
+
 int main(int argc, char *argv[])
 {
 
@@ -44,10 +47,18 @@ int main(int argc, char *argv[])
     char host_name[MSG_LEN];
     int port_num;
     printf("Program type: %s\n", program_type);
+    sprintf(msg, "Program type: %s", program_type);
+    log_msg(log_file, SERVER, msg);
 
     parse_host_port(socket_data, host_name, &port_num);
     printf("Host name: %s\n", host_name);
     printf("Port number: %d\n", port_num);
+
+    sprintf(msg, "Host name: %s\n", host_name);
+    log_msg(log_file, SERVER, msg);
+
+    sprintf(msg, "Port number: %d\n", port_num);
+    log_msg(log_file, SERVER, msg);
 
     if (strcmp(program_type, "server") == 0)
     {
@@ -158,7 +169,6 @@ int main(int argc, char *argv[])
     while(targets_socket == 0 || obstacles_socket == 0)
     {
         new_socket_fd = accept(socket_fd, (struct sockaddr *) &client_address, &client_len);
-        printf("AMIRMAHDIMATIN!\n");
         if (new_socket_fd < 0)
         {
             perror("Error accepting connection");
@@ -166,6 +176,7 @@ int main(int argc, char *argv[])
 
         char socket_msg[MSG_LEN];
         read_and_echo(new_socket_fd, socket_msg);
+        log_msg(log_file, "SOCKET", socket_msg);
 
         if (socket_msg[0] == 'O')
         {
@@ -199,12 +210,15 @@ int main(int argc, char *argv[])
         {
             // Read acknowledgement
             printf("[PIPE] Received from key_manager.c: %s\n", km_msg);
+            sprintf(msg, "[PIPE] Received from key_manager.c: %s\n", km_msg);
+            log_msg(log_file, SERVER, msg);
+
             fflush(stdout);
             // STOP key pressed (P)
             if (km_msg[0] == 'S')
             {
-                write_and_wait_echo(targets_socket, km_msg, sizeof(km_msg));
-                write_and_wait_echo(obstacles_socket, km_msg, sizeof(km_msg));
+                write_and_wait_echo(targets_socket, km_msg, sizeof(km_msg), log_file, SERVER);
+                write_and_wait_echo(obstacles_socket, km_msg, sizeof(km_msg), log_file, SERVER);
                 exit(0);
             }
             // Response
@@ -212,6 +226,8 @@ int main(int argc, char *argv[])
             sprintf(response_km_msg, "K:%s", km_msg);
             write_to_pipe(server_drone[1], response_km_msg);
             printf("[PIPE] Sent to drone.c: %s\n", response_km_msg);
+            sprintf(msg, "[PIPE] Sent to drone.c: %s\n", response_km_msg);
+            log_msg(log_file, SERVER, msg);
             fflush(stdout);
         }    
 
@@ -227,10 +243,14 @@ int main(int argc, char *argv[])
         {
             // Read acknowledgement
             printf("[PIPE] Received from interface.c: %s\n", interface_msg);
+            sprintf(msg, "[PIPE] Received from interface.c: %s\n", interface_msg);
+            log_msg(log_file, SERVER, msg);
             fflush(stdout);
             // Response for drone.c
             write_to_pipe(server_drone[1], interface_msg);
             printf("[PIPE] Sent to drone.c: %s\n", interface_msg);
+            sprintf(msg, "[PIPE] Sent to drone.c: %s\n", interface_msg);
+            log_msg(log_file, SERVER, msg);
             fflush(stdout);
 
             if (interface_msg[0] == 'I' && interface_msg[1] == '2')
@@ -238,16 +258,18 @@ int main(int argc, char *argv[])
                 // Send to socket: Client Targets
                 char sub_string_1[MSG_LEN];
                 strcpy(sub_string_1, interface_msg + 3);
-                write_and_wait_echo(targets_socket, sub_string_1, sizeof(sub_string_1));
+                write_and_wait_echo(targets_socket, sub_string_1, sizeof(sub_string_1), log_file, SERVER);
                 // Send to socket: Client Obstacles
                 char sub_string_2[MSG_LEN];
                 strcpy(sub_string_2, interface_msg + 3);
-                write_and_wait_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2));
+                write_and_wait_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2), log_file, SERVER);
                 printf("SENT %s to obstacles.c and targets.c\n", sub_string_2);
+                printf(msg, "SENT %s to obstacles.c and targets.c\n", sub_string_2);
+                log_msg(log_file, SERVER, msg);
             }
             if (interface_msg[0] == 'G')
             {
-                write_and_wait_echo(targets_socket, interface_msg, sizeof(interface_msg));
+                write_and_wait_echo(targets_socket, interface_msg, sizeof(interface_msg), log_file, SERVER);
             }
             
         }
@@ -263,11 +285,13 @@ int main(int argc, char *argv[])
             // Only send to drone when data has changed
             if (strcmp(drone_msg, prev_drone_msg) != 0) 
             {
-                printf("[PIPE] Received from drone.c: %s\n", drone_msg);
+                sprintf(msg, "[PIPE] Received from drone.c: %s\n", drone_msg);
+                log_msg(log_file, SERVER, msg);
                 fflush(stdout);
                 // Update previous values
                 strcpy(prev_drone_msg, drone_msg); 
-                printf("[PIPE] Sent to interface.c: %s\n", drone_msg);
+                sprintf(msg, "[PIPE] Sent to interface.c: %s\n", drone_msg);
+                log_msg(log_file, SERVER, msg);
                 fflush(stdout);
             }
         }
@@ -277,15 +301,17 @@ int main(int argc, char *argv[])
         /////////////////////////////////////////////////////
 
         char obstacles_msg[MSG_LEN];
-        if (read_and_echo_non_blocking(obstacles_socket, obstacles_msg) == 1)
+        if (read_and_echo_non_blocking(obstacles_socket, obstacles_msg, log_file, SERVER) == 1)
         {
             // Send to interface.c
             write_to_pipe(server_interface[1],obstacles_msg);
-            printf("[PIPE] Send to interface.c: %s\n", obstacles_msg);
+            sprintf(msg, "[PIPE] Send to interface.c: %s\n", obstacles_msg);
+            log_msg(log_file, SERVER, msg);
             fflush(stdout);
             // Send to drone.c
             write_to_pipe(server_drone[1], obstacles_msg);
-            printf("[PIPE] Sent to drone.c: %s\n", obstacles_msg);
+            sprintf(msg, "[PIPE] Sent to drone.c: %s\n", obstacles_msg);
+            log_msg(log_file, SERVER, msg);
             fflush(stdout);
         }        
 
@@ -295,12 +321,12 @@ int main(int argc, char *argv[])
 
         char targets_msg[MSG_LEN];
 
-        if (read_and_echo_non_blocking(targets_socket, targets_msg) == 1)
+        if (read_and_echo_non_blocking(targets_socket, targets_msg, log_file, SERVER) == 1)
         {
             // Send to interface.c
             write_to_pipe(server_interface[1],targets_msg);
-            printf("[PIPE] Sent to interface.c: %s\n", targets_msg);
-            fflush(stdout);
+            sprintf(msg, "[PIPE] Sent to interface.c: %s\n", targets_msg);
+            log_msg(log_file, SERVER, msg);
         }
 
     }
@@ -313,10 +339,10 @@ int main(int argc, char *argv[])
 
 void get_args(int argc, char *argv[])
 {
-    sscanf(argv[1], "%d %d %d %d %d %d %d %d %d", &km_server[0], &server_drone[1], 
+    sscanf(argv[1], "%d %d %d %d %d %d %d %d %d %s", &km_server[0], &server_drone[1], 
     &interface_server[0], &drone_server[0], &server_interface[1],
     &server_obstacles[1], &obstacles_server[0], &server_targets[1],
-    &targets_server[0]);
+    &targets_server[0], log_file);
 }
 
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
@@ -324,7 +350,8 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     // printf("Received signal number: %d \n", signo);
     if (signo == SIGINT)
     {
-        printf("Caught SIGINT\n");
+        sprintf(msg, "Caught SIGINT\n");
+        log_msg(log_file, SERVER, msg);
         clean_up();
         exit(1);
     }
@@ -386,5 +413,6 @@ void clean_up()
     close(targets_socket);
     close(new_socket_fd);
 
-    printf("Clean up has been performed succesfully\n");
+    sprintf(msg, "Clean up has been performed succesfully\n");
+    log_msg(log_file, SERVER, msg);
 }

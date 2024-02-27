@@ -42,12 +42,4 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context);
  */
 char* determine_action(char pressed_key);
 
-/**
- * log_msg - This function is used to log a message to the console
- * @msg: The message to log
- * 
- * This function is used to log a message to the console. It takes in the message to log and prints it to the console.
- */
-void log_msg(char *msg);
-
 #endif // KEY_MANAGER_H

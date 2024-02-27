@@ -4,13 +4,13 @@
 
 int create_child(const char *program, char **arg_list);
 
-
-/**
- * Closes all pipes created during the program's execution
-*/
-void close_all_pipes();
+void clean_up();
 
 void get_args(int argc, char *argv[], char *program_type, char *socket_data);
+
+void signal_handler(int signo, siginfo_t *siginfo, void *context);
+
+void create_logfile();
 
 
 #endif // MAIN_H
