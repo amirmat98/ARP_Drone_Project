@@ -1,8 +1,7 @@
-#include "constants.h"
 #include "import.h"
 
 // Publisht the PID integer value to the watchdog
-void publish_pid_to_wd(char process_symbol, pid_t pid)
+void publish_pid_to_wd(int process_symbol, pid_t pid)
 {   
     int shm_wd_fd = shm_open(SHAREMEMORY_WD, O_RDWR, 0666);
     char *ptr_wd = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_wd_fd, 0);
@@ -74,55 +73,17 @@ void write_message_to_logger(int who, int type, char *msg)
     sem_close(sem_logs_3);
 }
 
-void error(char *msg)
-{
-    perror(msg);
-    //exit(0);
-}
 
-// Reads a message from the pipe with select() system call.
-int read_pipe_non_blocking(int pipe_des, char *message[])
-{
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-    fd_set read_pipe;
-    FD_ZERO(&read_pipe);
-    FD_SET(pipe_des, &read_pipe);
-
-    char buffer[MSG_LEN];
-
-    int ready = select(pipe_des + 1, &read_pipe, NULL, NULL, &timeout);
-    if (ready == -1)
-    {
-        perror("Error in select");
-    }
-
-    if (ready > 0 && FD_ISSET(pipe_des, &read_pipe))
-    {
-        ssize_t bytes_read_pipe = read(pipe_des, buffer, MSG_LEN);
-        if (bytes_read_pipe > 0 )
-        {
-            strcpy(message, buffer);
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-        
-    }
-}
 
 // Reads a message from the socket, then does an echo.
-void read_and_echo(int socket, char socket_msg[])
+void read_and_echo(int socket_des, char socket_msg[])
 {
     int bytes_read, bytes_written;
     bzero(socket_msg, MSG_LEN);
 
     // Read from the socket
 
-    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
     if (bytes_read < 0) 
     {
         perror("ERROR reading from socket");
@@ -139,7 +100,7 @@ void read_and_echo(int socket, char socket_msg[])
     printf("[SOCKET] Received: %s\n", socket_msg);
     
     // Echo data read into socket
-    bytes_written = write(socket, socket_msg, bytes_read);
+    bytes_written = write(socket_des, socket_msg, bytes_read);
     if (bytes_written < 0)
     {
         perror("ERROR writing to socket");
@@ -148,7 +109,7 @@ void read_and_echo(int socket, char socket_msg[])
 
 }
 // Reads a message from the socket, with select() system call, then does an echo.
-int read_and_echo_non_blocking(int socket, char socket_msg[])
+int read_and_echo_non_blocking(int socket_des, char socket_msg[])
 {
     int ready;
     int bytes_read, bytes_written;
@@ -162,10 +123,10 @@ int read_and_echo_non_blocking(int socket, char socket_msg[])
 
     // Initialize the file descriptor set for monitoring.
     FD_ZERO(&read_set);
-    FD_SET(socket, &read_set);
+    FD_SET(socket_des, &read_set);
 
     // Use select() to wait for data to arrive.
-    ready = select(socket + 1, &read_set, NULL, NULL, &timeout);
+    ready = select(socket_des + 1, &read_set, NULL, NULL, &timeout);
     if (ready < 0) 
     {
         perror("ERROR in select");
@@ -177,7 +138,7 @@ int read_and_echo_non_blocking(int socket, char socket_msg[])
     }
 
     // Data is available. Read from the socket
-    bytes_read = read(socket, socket_msg, MSG_LEN - 1);
+    bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
     if (bytes_read < 0) 
     {
         perror("ERROR reading from socket");
@@ -198,7 +159,7 @@ int read_and_echo_non_blocking(int socket, char socket_msg[])
     printf("[SOCKET] Received: %s\n", socket_msg);
 
     // Echo the message back to the client.
-    bytes_written = write(socket, socket_msg, bytes_read);
+    bytes_written = write(socket_des, socket_msg, bytes_read);
     if (bytes_written < 0)
     {
         perror("ERROR writing to socket");
@@ -210,16 +171,16 @@ int read_and_echo_non_blocking(int socket, char socket_msg[])
     }
 }
 // Writes a message into the socket, then loops/waits until a valid echo is read.
-void write_and_wait_echo(int socket, char socket_msg[], size_t msg_size)
+void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size)
 {
     int correct_echo = 0;
     int bytes_read, bytes_written;
     char response_msg[MSG_LEN];
 
 
-    while(correct_echo == )
+    while(correct_echo == 0)
     {
-        bytes_written = write(socket, socket_msg, msg_size);
+        bytes_written = write(socket_des, socket_msg, msg_size);
         if (bytes_written < 0)
         {
             perror("ERROR writing to socket");
@@ -232,7 +193,7 @@ void write_and_wait_echo(int socket, char socket_msg[], size_t msg_size)
         while(response_msg[0] == '\0')
         {
             // Data is available for reading, so read from the socket
-            bytes_read = read(socket, response_msg, bytes_written);
+            bytes_read = read(socket_des, response_msg, bytes_written);
             if (bytes_read < 0)
             {
                 perror("ERROR reading from socket");
@@ -246,38 +207,76 @@ void write_and_wait_echo(int socket, char socket_msg[], size_t msg_size)
 
         if (strcmp(socket_msg, response_msg) == 0)
         {
-            // Pront the received message
+            // Print the received message
             printf("[SOCKET] Echo received: %s\n", response_msg);
             correct_echo = 1;
         }
     }
 }
 
+// Reads a message from the pipe with select() system call.
+int read_pipe_non_blocking(int pipe_des, char message[])
+{
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    fd_set read_pipe;
+    FD_ZERO(&read_pipe);
+    FD_SET(pipe_des, &read_pipe);
+
+    char buffer[MSG_LEN];
+
+    int ready = select(pipe_des + 1, &read_pipe, NULL, NULL, &timeout);
+    if (ready == -1)
+    {
+        perror("Error in select");
+    }
+
+    if (ready > 0 && FD_ISSET(pipe_des, &read_pipe))
+    {
+        ssize_t bytes_read_pipe = read(pipe_des, buffer, MSG_LEN);
+        if (bytes_read_pipe > 0)
+        {
+            strcpy(message, buffer);
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+        
+    }
+}
 
 // Reads the first line of uncommented text from a file
 void read_args_from_file(const char *file_name, char *type, char *data)
 {
     FILE *file = fopen(file_name, "r");
-    if (file == NULL)
+    if (file == NULL) 
     {
         fprintf(stderr, "Error opening file %s\n", file_name);
+        // exit(EXIT_FAILURE);
     }
 
-    // Read lines until findging a non-comment line
+    // Read lines until finding the first non-comment line
     char line[MSG_LEN];
-    while(fgets(line, sizeof(line), file)!= NULL)
+    while (fgets(line, sizeof(line), file) != NULL) 
     {
-        // Skip comments lines
-        if (line[0] != '#')
+        // Skip lines starting with '#' (comments)
+        if (line[0] != '#') 
         {
-            // Tokenize the line
+            // Tokenize the line to extract type and data
             char *token = strtok(line, " \t\n");
-            token = strtok(NULL, " \t\n");
-            if (token != NULL)
+            if (token != NULL) 
             {
-                strncpy(data, token, MSG_LEN);
-                fclose(file);
-                return;
+                strncpy(type, token, MSG_LEN);
+                token = strtok(NULL, " \t\n");
+                if (token != NULL) 
+                {
+                    strncpy(data, token, MSG_LEN);
+                    fclose(file);
+                    return;
+                }
             }
         }
     }

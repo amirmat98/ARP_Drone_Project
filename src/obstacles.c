@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     int n;
 
     struct sockaddr_in server_address;
-    struct hostent *server_host;
+    struct hostent *server;
 
     prot_number = port_num; // Port number
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -78,6 +78,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error, no host named 'localhost'.\n");
     }
 
+    printf("AMIR\n");
+
     bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
@@ -88,11 +90,16 @@ int main(int argc, char *argv[])
         // exit(1);
     }
 
+    int c = connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address));
+    printf("Connected to the server is: %d\n", c);
+
+
+
     //////////////////////////////////////////////////////
     /* IDENTIFICATION WITH SERVER */
     /////////////////////////////////////////////////////
 
-    char init_msg[] = "OI" // Adjust the size based on your requirements
+    char init_msg[] = "OI"; // Adjust the size based on your requirements
     write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg));
 
     //////////////////////////////////////////////////////
@@ -102,7 +109,7 @@ int main(int argc, char *argv[])
     // According to protocol, next data from server will be the screen dimensions
     float temp_scx, temp_scy;
     char dimension_msg[MSG_LEN];
-    read_and_echo(socket, dimension_msg);
+    read_and_echo(socket_fd, dimension_msg);
 
     sscanf(dimension_msg, "%f,%f", &temp_scx, &temp_scy);
     screen_size_x = (int)temp_scx;

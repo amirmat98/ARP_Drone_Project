@@ -13,6 +13,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include <sys/ipc.h>
 #include <sys/shm.h>

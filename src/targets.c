@@ -6,7 +6,7 @@ int server_targets[0];
 int targets_server[1];
 
 // Sockets
-int socket;
+int socket_fd;
 
 int main(int argc, char *argv[])
 {
@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
     printf("Host name: %s\n", host_name);
     printf("Port number: %d\n", port_num);
 
+
     if (strcmp(program_type, "server") == 0)
     {
         exit(0);
@@ -39,6 +40,7 @@ int main(int argc, char *argv[])
     sigaction (SIGINT, &sa, NULL);
     sigaction (SIGUSR1, &sa, NULL);   
     publish_pid_to_wd(TARGETS_SYM, getpid());
+
 
     // Seed random number generator with current time
     srand(time(NULL));
@@ -63,33 +65,39 @@ int main(int argc, char *argv[])
     struct sockaddr_in server_address;
     struct hostent *server;
 
+    
+
     port_number = port_num; // Hardcoded port number
-    socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket < 0)
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0)
     {
         perror("ERROR opening socket");
     }
     server = gethostbyname(host_name);
     if (server == NULL)
     {
-        fprintf(stderr, "ERROR, no host named 'localhost'\n");
+        fprintf(stderr,"ERROR, no such host\n");
     }
 
     bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
     server_address.sin_port = htons(port_number);
-    if (connect(socket, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+    if (connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
         perror("ERROR connecting");
     }
+
+    int c = connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address));
+    printf("Connecting %d\n", c);
+
 
     //////////////////////////////////////////////////////
     /* IDENTIFICATION WITH SERVER */
     /////////////////////////////////////////////////////
 
     char init_msg[] = "TI";
-    write_and_wait_echo(socket, init_msg, sizeof(init_msg));
+    write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg));
 
     //////////////////////////////////////////////////////
     /* OBTAIN DIMENSIONS */
@@ -97,7 +105,7 @@ int main(int argc, char *argv[])
 
     // According to protocol, next data from server will be the screen dimensions
     char dimension_msg[MSG_LEN];
-    read_and_echo(socket, dimension_msg);
+    read_and_echo(socket_fd, dimension_msg);
 
     float temp_scx, temp_scy;
     sscanf(dimension_msg, "%f,%f", &temp_scx, &temp_scy);
@@ -134,7 +142,7 @@ int main(int argc, char *argv[])
             make_target_msg(targets, targets_msg);
 
             // Send the data to the server
-            write_and_wait_echo(socket, targets_msg, sizeof(targets_msg));
+            write_and_wait_echo(socket_fd, targets_msg, sizeof(targets_msg));
             // write_to_pipe(targets_server[1], targets_msg);
             targets_created = true;
         }
@@ -149,7 +157,7 @@ int main(int argc, char *argv[])
 
         char socket_msg[MSG_LEN];
         // We use blocking read because targets do not not continous operation
-        read_and_echo(socket, socket_msg);
+        read_and_echo(socket_fd, socket_msg);
 
         if (strcmp(socket_msg, "STOP") == 0)
         {
@@ -269,7 +277,7 @@ void make_target_msg(Target *targets, char *message)
 
 void clean_up()
 {
-    close(socket);
-    close(server_targets[0]);
     close(targets_server[1]);
+    close(server_targets[0]);
+    close(socket_fd);
 }

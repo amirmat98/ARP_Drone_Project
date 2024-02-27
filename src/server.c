@@ -26,11 +26,8 @@ sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
 // Sockets
 int obstacles_socket;
 int targets_socket;
-int socket;
-int new_socket;
-int port_number;
-int client_len;
-int pid;
+int socket_fd;
+int new_socket_fd, port_number, client_len ,pid;
 
 int main(int argc, char *argv[])
 {
@@ -124,28 +121,35 @@ int main(int argc, char *argv[])
 
     int obstacles_socket = 0;
     int targets_socket = 0;
-    int socket = 0;
-    int new_socket = 0;
-    struct socket_addr_in server_address, client_address;
+    int socket_fd = 0, new_socket_fd = 0, port_number, client_len, pid;
+    struct sockaddr_in server_address, client_address;
 
-    socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket < 0)
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0)
     {
         perror("Error opening socket");
     }
     
-    prot_number = port_num; // Port number
+    port_number = port_num; // Port number
     
-    bzero((char*) &server_address, sizeof(server_address));
+    bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
-    servent_address.sin_port.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(prot_number);
-    if (bind(socket, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(port_number);
+
+
+    if (bind(socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     {
         perror("ERROR on binding");
     }
-    listen(socket, 5); // Max 5 connections
+
+    int b = bind(socket_fd, (struct sockaddr *) &server_address, sizeof(server_address));
+
+    printf("Server is listening bind %d\n", b);
+
+    listen(socket_fd, 5); // Max 5 connections
     client_len = sizeof(client_address);
+
 
     //////////////////////////////////////////////////////
     /* HANDLE CLIENT CONNECTIONS */
@@ -153,26 +157,27 @@ int main(int argc, char *argv[])
 
     while(targets_socket == 0 || obstacles_socket == 0)
     {
-        new_socket = accept(socket, (struct socket_addr *) &client_address, &client_len);
-        if (new_socket < 0)
+        new_socket_fd = accept(socket_fd, (struct sockaddr *) &client_address, &client_len);
+        printf("AMIRMAHDIMATIN!\n");
+        if (new_socket_fd < 0)
         {
             perror("Error accepting connection");
         }
 
         char socket_msg[MSG_LEN];
-        read_and_echo(new_socket, socket_msg);
+        read_and_echo(new_socket_fd, socket_msg);
 
         if (socket_msg[0] == 'O')
         {
-            obstacles_socket = new_socket;
+            obstacles_socket = new_socket_fd;
         }
         else if (socket_msg[0] == 'T')
         {
-            targets_socket = new_socket;
+            targets_socket = new_socket_fd;
         }
         else
         {
-            close(new_socket);
+            close(new_socket_fd);
         }
         
     }
@@ -224,7 +229,7 @@ int main(int argc, char *argv[])
             printf("[PIPE] Received from interface.c: %s\n", interface_msg);
             fflush(stdout);
             // Response for drone.c
-            write_to_pipe(drone_server[1], interface_msg);
+            write_to_pipe(server_drone[1], interface_msg);
             printf("[PIPE] Sent to drone.c: %s\n", interface_msg);
             fflush(stdout);
 
@@ -238,7 +243,7 @@ int main(int argc, char *argv[])
                 char sub_string_2[MSG_LEN];
                 strcpy(sub_string_2, interface_msg + 3);
                 write_and_wait_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2));
-                printf("SENT %s to obstacles.c and targets.c\n", substring2);
+                printf("SENT %s to obstacles.c and targets.c\n", sub_string_2);
             }
             if (interface_msg[0] == 'G')
             {
@@ -352,6 +357,8 @@ void *create_shm(char *name)
         perror("Map Failed");
         exit(1);
     }
+
+    close(shm_fd);
     return shm_ptr;
 }
 
@@ -374,10 +381,10 @@ void clean_up()
     shm_unlink(SHAREMEMORY_WD);
 
     // close all sockets
-    close(socket);
-    close(targets_socket);
+    close(socket_fd);
     close(obstacles_socket);
-    close(new_socket);
+    close(targets_socket);
+    close(new_socket_fd);
 
     printf("Clean up has been performed succesfully\n");
 }

@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
     
     bool euler_method_flag = true; // For testing purposes.
 
-    char server_msg[MSG_LEN];
 
     // Simulate the motion in an infinite loop using Differential Equations
     while (1)

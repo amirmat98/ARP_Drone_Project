@@ -38,7 +38,6 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
         kill(logger_pid, SIGKILL);
         kill(targets_pid, SIGKILL);
         kill(obstacles_pid, SIGKILL);
-
         printf("Closing all pipes.. \n");
         close_all_pipes();
 
@@ -157,7 +156,6 @@ int main(int argc, char *argv[])
     window_pid = create_child(window_args[0], window_args);
     number_process++;
     usleep(delay);
-
 
     /* Targets */
     char *targets_args[] = {"konsole", "-e", "./build/targets", targets_fds, NULL};

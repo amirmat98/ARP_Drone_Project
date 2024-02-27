@@ -1,5 +1,6 @@
 #include "interface.h"
 #include "import.h"
+#include <ncurses.h>
 
 
 // Serverless pipe
@@ -138,7 +139,11 @@ int main(int argc, char *argv[])
         
         char server_msg[MSG_LEN];
 
+        
+
         ssize_t bytes_read_drone = read(server_interface[0], server_msg, MSG_LEN);
+    
+
         if (bytes_read_drone > 0) 
         {
             if (server_msg[0] == 'D')
@@ -163,7 +168,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        printf("TARGETS OBTAINED.\n");
+        // printf("TARGETS OBTAINED.\n");
 
         //////////////////////////////////////////////////////
         /* SECTION 3: DATA ANALYSIS & GAME SCORE CALCULATION*/
@@ -200,7 +205,7 @@ int main(int argc, char *argv[])
         // Check if the drone has crashed into an obstacle
         if (check_collision_drone_obstacle(obstacles, number_obstacles, drone_x, drone_y))
         {
-            calculate_score(&counter, &score, 0);
+            calculate_score(counter, &score, 0);
         }
 
         // Counter/Timer linked to score calculations
@@ -394,32 +399,6 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
     }
     return 0; // Drone is not at the same coordinates as any obstacle
 }
-
-
-/*
-void draw_final_window(int score)
-{
-    clear();
-    int counter_count = 5;
-    int max_y, max_x;
-    getmaxyx(stdscr, max_y, max_x);
-    box(stdscr, 0, 0);
-    refresh();
-    // Calculate the center of the screen
-    int center_y = max_y / 2;
-    int center_x = (max_x - 40) / 2;  // Adjusted for a message of length 30
-    // Print the message at the center of the screen
-    mvprintw(center_y, center_x, "You are greatly appreciated for participating. Your overall grade is: %d", score);
-    for (int i = 0; i < counter_count; i++)
-    {
-        mvprintw(center_y + 2, center_x, "This window will close automatically in %d seconds", counter_count - i);
-        refresh();
-        sleep(1);
-    }
-    // Cleanup, close ncurses and exit.
-    endwin();
-}
-*/
 
 
 void calculate_score(int counter, int *score, int operator)

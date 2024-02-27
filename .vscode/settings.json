@@ -14,7 +14,12 @@
         "wait.h": "c",
         "string.h": "c",
         "constants.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "in.h": "c",
+        "socket.h": "c",
+        "stdbool.h": "c",
+        "netdb.h": "c",
+        "drone.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
