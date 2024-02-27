@@ -93,10 +93,13 @@ int main(int argc, char *argv[])
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
     server_address.sin_port = htons(prot_number);
+
+    block_signal(SIGUSR1);
     if (connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
         log_err(log_file, OBS, "ERROR connecting");
     }
+    unblock_signal(SIGUSR1);
 
 
     //////////////////////////////////////////////////////

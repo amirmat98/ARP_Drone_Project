@@ -94,10 +94,13 @@ int main(int argc, char *argv[])
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
     server_address.sin_port = htons(port_number);
+
+    block_signal(SIGUSR1);
     if (connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
         log_err(log_file, TARGETS, "ERROR connecting");
     }
+    unblock_signal(SIGUSR1);
 
     //////////////////////////////////////////////////////
     /* IDENTIFICATION WITH SERVER */
@@ -164,8 +167,7 @@ int main(int argc, char *argv[])
         we may use a blocking-read for the socket */
 
         char socket_msg[MSG_LEN];
-        // We use blocking read because targets do not not continous operation
-        read_and_echo(socket_fd, socket_msg);
+        read_and_echo_non_blocking(socket_fd, socket_msg, log_file, TARGETS);
 
         if (strcmp(socket_msg, "STOP") == 0)
         {

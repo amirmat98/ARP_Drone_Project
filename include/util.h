@@ -12,7 +12,7 @@ void publish_pid_to_wd(int process_symbol, pid_t pid);
 
 void write_to_pipe(int pipe_des, char message[]);
 
-void write_message_to_logger(int who, int type, char *msg);
+// void write_message_to_logger(int who, int type, char *msg);
 
 int read_pipe_non_blocking(int pipe_des, char message[]);
 
@@ -25,5 +25,9 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_len, char
 void read_args_from_file(const char *file_name, char *type, char *data);
 
 void parse_host_port(const char *str, char *host, int *port);
+
+void block_signal(int signal);
+
+void unblock_signal(int signal);
 
 #endif // UTIL_H

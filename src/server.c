@@ -164,7 +164,10 @@ int main(int argc, char *argv[])
 
     while(targets_socket == 0 || obstacles_socket == 0)
     {
-        new_socket_fd = accept(socket_fd, (struct sockaddr *) &client_address, &client_len);
+        block_signal(SIGUSR1);
+        new_socket_fd = accept(socket_fd, (struct sockaddr *)&client_address, &client_len);
+        unblock_signal(SIGUSR1);
+        
         if (new_socket_fd < 0)
         {
             log_err(log_file, SERVER, "ERROR on accept");

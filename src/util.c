@@ -96,39 +96,6 @@ void write_to_pipe(int pipe_des, char message[])
     }
 }
 
-// Writes the provided message into the logger.
-void write_message_to_logger(int who, int type, char *msg)
-{
-    int shm_logs_fd = shm_open(SHAREMEMORY_LOGS, O_RDWR, 0666);
-    void *ptr_logs = mmap(0, SIZE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_logs_fd, 0);
-
-    sem_t *sem_logs_1 = sem_open(SEMAPHORE_LOGS_1, 0);
-    sem_t *sem_logs_2 = sem_open(SEMAPHORE_LOGS_2, 0);
-    sem_t *sem_logs_3 = sem_open(SEMAPHORE_LOGS_3, 0);
-
-    sem_wait(sem_logs_1);
-
-    // unsure if it will work
-    sprintf(ptr_logs, "%i|%i|%s", who, type, msg);
-
-    // Message is ready to be read
-    sem_post(sem_logs_2);
-
-    // wait for logger to finish writing
-    sem_wait(sem_logs_3);
-
-    // allow other processes to log their messages
-    sem_post(sem_logs_1);
-
-    // Detach from shared memorry
-    munmap(ptr_logs,SIZE_SHM);
-    close(shm_logs_fd);
-    sem_close(sem_logs_1);
-    sem_close(sem_logs_2);
-    sem_close(sem_logs_3);
-}
-
-
 
 // Reads a message from the socket, then does an echo.
 void read_and_echo(int socket_des, char socket_msg[])
@@ -137,8 +104,9 @@ void read_and_echo(int socket_des, char socket_msg[])
     bzero(socket_msg, MSG_LEN);
 
     // Read from the socket
-
+    block_signal(SIGUSR1);
     bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
+    unblock_signal(SIGUSR1);
     if (bytes_read < 0) 
     {
         perror("ERROR reading from socket");
@@ -155,7 +123,9 @@ void read_and_echo(int socket_des, char socket_msg[])
     // printf("[SOCKET] Received: %s\n", socket_msg);
     
     // Echo data read into socket
+    block_signal(SIGUSR1);
     bytes_written = write(socket_des, socket_msg, bytes_read);
+    unblock_signal(SIGUSR1);
     if (bytes_written < 0)
     {
         perror("ERROR writing to socket");
@@ -166,6 +136,7 @@ void read_and_echo(int socket_des, char socket_msg[])
 // Reads a message from the socket, with select() system call, then does an echo.
 int read_and_echo_non_blocking(int socket_des, char socket_msg[], char* log_file,char *log_who)
 {
+    char msg_logs[1024];
     int ready;
     int bytes_read, bytes_written;
     fd_set read_set;
@@ -181,7 +152,9 @@ int read_and_echo_non_blocking(int socket_des, char socket_msg[], char* log_file
     FD_SET(socket_des, &read_set);
 
     // Use select() to wait for data to arrive.
+    block_signal(SIGUSR1);
     ready = select(socket_des + 1, &read_set, NULL, NULL, &timeout);
+    unblock_signal(SIGUSR1);
     if (ready < 0) 
     {
         perror("ERROR in select");
@@ -191,33 +164,36 @@ int read_and_echo_non_blocking(int socket_des, char socket_msg[], char* log_file
         return 0;
         // No data available
     }
-
-    // Data is available. Read from the socket
-    bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
-    if (bytes_read < 0) 
+    else
     {
-        perror("ERROR reading from socket");
-    }
+        // Data is available. Read from the socket
+        bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
+        if (bytes_read < 0) 
+        {
+            perror("ERROR reading from socket");
+        }
 
-    else if (bytes_read == 0)
-    {
-        return 0;
-        // Connection closed
-    }
-    else if (socket_msg[0] == '\0')
-    {
-        return 0;
-        // Empty message
-    }
+        else if (bytes_read == 0)
+        {
+            return 0;
+            // Connection closed
+        }
+        else if (socket_msg[0] == '\0')
+        {
+            return 0;
+            // Empty message
+        }
 
-    // Print the received message
-    // printf("[SOCKET] Received: %s\n", socket_msg);
-    char msg_logs[1024];
-    sprintf(msg_logs, "[SOCKET] Received: %s\n", socket_msg);
-    log_msg(log_file, log_who, msg_logs);
+        // Print the received message
+        // printf("[SOCKET] Received: %s\n", socket_msg);
+        sprintf(msg_logs, "[SOCKET] Received: %s\n", socket_msg);
+        log_msg(log_file, log_who, msg_logs);
+    }
 
     // Echo the message back to the client.
+    block_signal(SIGUSR1);
     bytes_written = write(socket_des, socket_msg, bytes_read);
+    unblock_signal(SIGUSR1);
     if (bytes_written < 0)
     {
         perror("ERROR writing to socket");
@@ -240,7 +216,9 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size, cha
 
     while(correct_echo == 0)
     {
+        block_signal(SIGUSR1);
         bytes_written = write(socket_des, socket_msg, msg_size);
+        unblock_signal(SIGUSR1);
         if (bytes_written < 0)
         {
             perror("ERROR writing to socket");
@@ -254,7 +232,9 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size, cha
         while(response_msg[0] == '\0')
         {
             // Data is available for reading, so read from the socket
+            block_signal(SIGUSR1);
             bytes_read = read(socket_des, response_msg, bytes_written);
+            unblock_signal(SIGUSR1);
             if (bytes_read < 0)
             {
                 perror("ERROR reading from socket");
@@ -288,7 +268,9 @@ int read_pipe_non_blocking(int pipe_des, char message[])
 
     char buffer[MSG_LEN];
 
+    block_signal(SIGUSR1);
     int ready = select(pipe_des + 1, &read_pipe, NULL, NULL, &timeout);
+    block_signal(SIGUSR1);
     if (ready == -1)
     {
         perror("Error in select");
@@ -359,4 +341,29 @@ void parse_host_port(const char *str, char *host, int *port)
     host[len] = '\0';
 
     *port = atoi(colon + 1);
+}
+
+// block the sspecified signal signal
+void block_signal(int signal)
+{
+    // Create a set of signals to block
+    sigset_t sigset;
+    // Initialize the set to 0
+    sigemptyset(&sigset);
+    // Add the signal to the set
+    sigaddset(&sigset, signal);
+    // Add the signals in the set to the process' blocked signals
+    sigprocmask(SIG_BLOCK, &sigset, NULL);
+}
+
+void unblock_signal(int signal)
+{   
+    // Create a set of signals to unblock
+    sigset_t sigset;
+    // Initialize the set to 0
+    sigemptyset(&sigset);
+    // Add the signal to the set
+    sigaddset(&sigset, signal);
+    // Remove the signals in the set from the process' blocked signals
+    sigprocmask(SIG_UNBLOCK, &sigset, NULL);
 }
