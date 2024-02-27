@@ -1,6 +1,9 @@
 #ifndef MAIN_H    
 #define MAIN_H
 
+#include <stdio.h>
+#include <signal.h>
+
 
 int create_child(const char *program, char **arg_list);
 

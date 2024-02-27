@@ -6,6 +6,8 @@
 
 void log_msg(char *file_path, char *who, char *message);
 
+void log_err(char *file_path, char *who, char *message);
+
 void publish_pid_to_wd(int process_symbol, pid_t pid);
 
 void write_to_pipe(int pipe_des, char message[]);

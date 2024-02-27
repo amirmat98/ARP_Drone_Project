@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        perror("ERROR opening socket");
+        log_err(log_file, TARGETS, "ERROR opening socket");
     }
     server = gethostbyname(host_name);
     if (server == NULL)
@@ -96,12 +96,8 @@ int main(int argc, char *argv[])
     server_address.sin_port = htons(port_number);
     if (connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
-        perror("ERROR connecting");
+        log_err(log_file, TARGETS, "ERROR connecting");
     }
-
-    int c = connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address));
-    printf("Connecting %d\n", c);
-
 
     //////////////////////////////////////////////////////
     /* IDENTIFICATION WITH SERVER */

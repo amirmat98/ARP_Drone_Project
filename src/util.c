@@ -57,6 +57,34 @@ void log_msg(char *file_path, char* who, char *message)
     message = ""; // clear the buffer
 }
 
+void log_err(char *file_path, char* who, char *message)
+{
+    perror(message);
+    // Open the file
+    FILE *file_fd = fopen(file_path, "a");
+    if (file_fd == NULL)
+    {
+        perror("Logfile open failed!");
+        exit(1);
+    }
+    
+    // Get the current time
+    time_t currentTime;
+    time(&currentTime);
+    struct tm *localTime = localtime(&currentTime);
+    int hours = localTime->tm_hour;
+    int minutes = localTime->tm_min;
+    int seconds = localTime->tm_sec;
+    
+    char time[80];
+    char *eol = "\n";
+    sprintf(time, "%02d:%02d:%02d", hours, minutes, seconds);
+    
+    fprintf(file_fd, "[ERROR][%s] at [%s:] %s", who, time, message);
+    fclose(file_fd); //close file at the end
+    message = ""; // clear the buffer
+}
+
 // Writes message using the file descriptor provided.
 void write_to_pipe(int pipe_des, char message[])
 {
@@ -241,7 +269,7 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size, cha
         if (strcmp(socket_msg, response_msg) == 0)
         {
             // Print the received message
-            sprintfmsg, ("[SOCKET] Echo received: %s\n", response_msg);
+            sprintf(msg, "[SOCKET] Echo received: %s\n", response_msg);
             log_msg(log_file, log_who, msg);
             correct_echo = 1;
         }

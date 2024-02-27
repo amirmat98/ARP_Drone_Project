@@ -82,19 +82,19 @@ int main(int argc, char *argv[])
     sem_wd_1 = sem_open(SEMAPHORE_WD_1, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
     if (sem_wd_1 == SEM_FAILED) 
     {
-        perror("sem_wd_1 failed");
+        log_err(log_file, SERVER, "sem_wd_1 failed");
         exit(1);
     }
     sem_wd_2 = sem_open(SEMAPHORE_WD_2, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
     if (sem_wd_2 == SEM_FAILED) 
     {
-        perror("sem_wd_2 failed");
+        log_err(log_file, SERVER, "sem_wd_2 failed");
         exit(1);
     }
     sem_wd_3 = sem_open(SEMAPHORE_WD_3, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
     if (sem_wd_3 == SEM_FAILED) 
     {
-        perror("sem_wd_3 failed");
+        log_err(log_file, SERVER, "sem_wd_3 failed");
         exit(1);
     }
 
@@ -104,19 +104,19 @@ int main(int argc, char *argv[])
     sem_logs_1 = sem_open(SEMAPHORE_LOGS_1, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
     if (sem_logs_1 == SEM_FAILED) 
     {
-        perror("sem_logs_1 failed");
+        log_err(log_file, SERVER, "sem_logs_1 failed");
         exit(1);
     }
     sem_logs_2 = sem_open(SEMAPHORE_LOGS_2, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
     if (sem_logs_2 == SEM_FAILED) 
     {
-        perror("sem_logs_2 failed");
+        log_err(log_file, SERVER, "sem_logs_2 failed");
         exit(1);
     }
     sem_logs_3 = sem_open(SEMAPHORE_LOGS_3, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
     if (sem_logs_3 == SEM_FAILED) 
     {
-        perror("sem_logs_3 failed");
+        log_err(log_file, SERVER, "sem_logs_3 failed");
         exit(1);
     }
 
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        perror("Error opening socket");
+        log_err(log_file, SERVER, "ERROR opening socket");
     }
     
     port_number = port_num; // Port number
@@ -151,12 +151,8 @@ int main(int argc, char *argv[])
 
     if (bind(socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     {
-        perror("ERROR on binding");
+        plog_err(log_file, SERVER, "ERROR on binding");
     }
-
-    int b = bind(socket_fd, (struct sockaddr *) &server_address, sizeof(server_address));
-
-    printf("Server is listening bind %d\n", b);
 
     listen(socket_fd, 5); // Max 5 connections
     client_len = sizeof(client_address);
@@ -171,7 +167,7 @@ int main(int argc, char *argv[])
         new_socket_fd = accept(socket_fd, (struct sockaddr *) &client_address, &client_len);
         if (new_socket_fd < 0)
         {
-            perror("Error accepting connection");
+            log_err(log_file, SERVER, "ERROR on accept");
         }
 
         char socket_msg[MSG_LEN];
@@ -371,7 +367,7 @@ void *create_shm(char *name)
     int shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1)
     {
-        perror("shm_open of shm_key");
+        log_err(log_file, SERVER, "shm_open of shm_key");
         exit(1);
     }
     /* configure the size of the shared memory object */
@@ -381,7 +377,7 @@ void *create_shm(char *name)
     void *shm_ptr = mmap(0, SIZE_SHM, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0); 
     if (shm_ptr == MAP_FAILED)
     {
-        perror("Map Failed");
+        log_err(log_file, SERVER, "Map Failed");
         exit(1);
     }
 

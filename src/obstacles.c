@@ -80,8 +80,7 @@ int main(int argc, char *argv[])
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        perror("Error opening socket");
-        // exit(1);
+        log_err(log_file, OBS, "ERROR opening socket");
     }
     server = gethostbyname(host_name);
     if (server == NULL)
@@ -89,7 +88,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error, no host named 'localhost'.\n");
     }
 
-    printf("AMIR\n");
 
     bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
@@ -97,13 +95,8 @@ int main(int argc, char *argv[])
     server_address.sin_port = htons(prot_number);
     if (connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
-        perror("Error connecting");
-        // exit(1);
+        log_err(log_file, OBS, "ERROR connecting");
     }
-
-    int c = connect(socket_fd, (struct sockaddr *)&server_address, sizeof(server_address));
-    printf("Connected to the server is: %d\n", c);
-
 
 
     //////////////////////////////////////////////////////
@@ -142,9 +135,9 @@ int main(int argc, char *argv[])
             // printf("STOP RECEIVED FROM SERVER!\n");
             // printf("This process will close in 5 seconds...\n");
             sprintf(msg,"STOP RECEIVED FROM SERVER!");
-            log_msg(logfile, OBS, msg);
+            log_msg(log_file, OBS, msg);
             sprintf(msg,"This process will close in 5 seconds...");
-            log_msg(logfile, OBS, msg);
+            log_msg(log_file, OBS, msg);
             fflush(stdout);
             sleep(5);
             exit(0);
@@ -187,7 +180,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     {
         printf("Caught SIGINT \n");
         sprintf(msg, "Caught SIGINT");
-        log_msg(logfile, OBS, msg);
+        log_msg(log_file, OBS, msg);
         close(obstacles_server[1]);
         close(server_obstacles[0]);
         exit(1);
