@@ -6,8 +6,6 @@
 int server_obstacles[2];
 int obstacles_server[2];
 
-
-
 int main(int argc, char *argv[])
 {
     get_args(argc, argv);
@@ -20,11 +18,6 @@ int main(int argc, char *argv[])
     int number_obstacles = 0;
     char obstacles_msg[MSG_LEN]; // Adjust the size based on your requirements
 
-    // Timeout
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
     // To compare previous values
     bool obtained_dimensions = false;
 
@@ -35,60 +28,33 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        //////////////////////////////////////////////////////
+        
         /* Step 1: READ THE DATA FROM SERVER*/
-        /////////////////////////////////////////////////////
+        
+        // Read data from the server
+        char server_msg[MSG_LEN] = {0};
 
-        // Initialize a set to track read events.
-        fd_set active_read_set;
-        // Clear all entries from the set.
-        FD_ZERO(&active_read_set);
-        // Add the first server obstacle's file descriptor to the set.
-        FD_SET(server_obstacles[0], &active_read_set);
-
-        // Buffer to store the server's message.
-        char buffer_server[MSG_LEN];
-
-        // Wait for any of the file descriptors to be ready for reading, or for a timeout.
-        int num_fds_ready = select(server_obstacles[0] + 1, &active_read_set, NULL, NULL, &timeout);
-        if (num_fds_ready == -1) 
+        if (read_from_pipe(server_obstacles[0], server_msg))
         {
-            // Log an error if select fails.
-            perror("Select encountered an error");
+            // Process the message received from the server.
+            receive_message_from_server(server_msg, &screen_size_x, &screen_size_y);
+            // Indicate that the screen dimensions have been received.
+            obtained_dimensions = true;
         }
 
-        // Check if there's data to read from the first server obstacle.
-        if (num_fds_ready > 0 && FD_ISSET(server_obstacles[0], &active_read_set)) 
-        {
-            // Read data into the buffer.
-            ssize_t count_bytes = read(server_obstacles[0], buffer_server, MSG_LEN);
-            if (count_bytes > 0) 
-            {
-                // Process the message received from the server.
-                receive_message_from_server(buffer_server, &screen_size_x, &screen_size_y);
-                printf("Screen size: %d x %d\n", screen_size_x, screen_size_y);
-                printf("-----------------------------------\n");
-                // Indicate that the screen dimensions have been received.
-                obtained_dimensions = true;
-            }
-        }
         // Continue the loop if the screen dimensions have not been obtained yet.
         if(!obtained_dimensions)
         {
             continue;
         }
 
-        //////////////////////////////////////////////////////
         /* Step 2: OBSTACLES GENERATION & SEND DATA */
-        /////////////////////////////////////////////////////
-
 
         if (number_obstacles < MAX_OBSTACLES) 
         {
             obstacles[number_obstacles] = generate_obstacle(screen_size_x, screen_size_y);
             number_obstacles++;
         }
-
 
         obstacles_msg[0] = '\0'; // Clear the string
 
