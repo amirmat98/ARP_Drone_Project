@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
     /* Watchdog */
     // char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL};
-    char *wd_args[] = {"./build/watchdog", logfile_path, NULL};
+    char *wd_args[] = {"./build/watchdog", log_file_path, NULL};
     wd_pid = create_child(wd_args[0], wd_args);
     number_process++;
     

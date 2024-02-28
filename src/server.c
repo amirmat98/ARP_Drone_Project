@@ -35,7 +35,7 @@ char msg[1024];
 int main(int argc, char *argv[])
 {
 
-    clean_up();
+    // clean_up();
     
     // Read the file descriptors from the arguments
     get_args(argc, argv);
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     // Set Configuration
     char program_type[MSG_LEN];
     char socket_data[MSG_LEN];
-    read_args_from_file("./src/configuration.txt", program_type, socket_data);
+    read_args_from_file(CONFIG_PATH, program_type, socket_data);
     char host_name[MSG_LEN];
     int port_num;
     printf("Program type: %s\n", program_type);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
     if (bind(socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     {
-        plog_err(log_file, SERVER, "ERROR on binding");
+        log_err(log_file, SERVER, "ERROR on binding");
     }
 
     listen(socket_fd, 5); // Max 5 connections

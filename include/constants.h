@@ -1,6 +1,9 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+// Path to config file
+#define CONFIG_PATH "./configuration.txt"
+
 // Pipes Constants
 #define MSG_LEN 256
 

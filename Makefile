@@ -1,7 +1,7 @@
 # Source directory and build directory
 SRCDIR = ./src
 BUILDDIR = ./build
-LOGDIR = ./log
+LOGDIR = logs
 
 # UTILOBJ
 UTIL_OBJ = $(BUILDDIR)/util.o
@@ -10,12 +10,9 @@ UTIL_OBJ = $(BUILDDIR)/util.o
 # Default target
 all: $(BUILDDIR) util wd server km drone interface main targets obstacles
 
-# create build directory
+# create build directory and logs
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
-
-# create build directory
-$(LOGDIR):
 	mkdir -p $(BUILDDIR)/$(LOGDIR)
 
 # Run project
@@ -29,9 +26,13 @@ clean:
 	rm -f $(BUILDDIR)/key_manager
 	rm -f $(BUILDDIR)/drone
 	rm -f $(BUILDDIR)/watchdog
+	rm -f $(BUILDDIR)/obstacles
+	rm -f $(BUILDDIR)/targets
 	rm -f $(BUILDDIR)/util
+	rm -f $(BUILDDIR)/util.o
+	rm -f $(BUILDDIR)/$(LOGDIR)/*
 
-
+	
 drone:
 	gcc -I include -o $(BUILDDIR)/drone $(UTIL_OBJ) $(SRCDIR)/drone.c -pthread -lm
 main:

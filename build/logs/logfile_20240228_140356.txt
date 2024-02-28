@@ -1,0 +1,210 @@
+[INFO][MAIN] at [14:03:56:] All processes created[INFO][MAIN] at [14:03:56:] Child process ./build/server with PID: 19853  was created
+[INFO][SERVER] at [14:03:56:] Program type: standalone[INFO][SERVER] at [14:03:56:] Host name: localhost
+[INFO][SERVER] at [14:03:56:] Port number: 2000
+[INFO][MAIN] at [14:03:57:] Child process konsole with PID: 19856  was created
+[INFO][MAIN] at [14:03:57:] Child process ./build/targets with PID: 19871  was created
+[INFO][MAIN] at [14:03:57:] Child process ./build/obstacles with PID: 19874  was created
+[INFO][MAIN] at [14:03:57:] Child process ./build/key_manager with PID: 19881  was created
+[INFO][MAIN] at [14:03:57:] Child process ./build/drone with PID: 19884  was created
+[INFO][MAIN] at [14:03:57:] Child process ./build/watchdog with PID: 19885  was created
+[INFO][WATCHDOG] at [14:03:57:] current pid 19853  symbol 1 
+[INFO][WATCHDOG] at [14:03:57:] Server PID SET: 19853[INFO][WATCHDOG] at [14:03:57:] current pid 19853  symbol 0 
+[ERROR][WATCHDOG] at [14:03:57:] Wrong process symbol!: 0 [INFO][WATCHDOG] at [14:03:57:] current pid 19853  symbol 0 
+[ERROR][WATCHDOG] at [14:03:57:] Wrong process symbol!: 0 [INFO][WATCHDOG] at [14:03:57:] current pid 19853  symbol 0 
+[ERROR][WATCHDOG] at [14:03:57:] Wrong process symbol!: 0 [INFO][INTERFACE] at [14:03:57:] Interface initialized[INFO][TARGETS] at [14:03:58:] Program type: standalone
+[INFO][TARGETS] at [14:03:58:] Host name: localhost
+[INFO][TARGETS] at [14:03:58:] Port number: 2000
+[INFO][WATCHDOG] at [14:03:58:] current pid 19871  symbol 8 
+[INFO][WATCHDOG] at [14:03:58:] Targets PID SET: 19871[INFO][TARGETS] at [14:03:58:] [SOCKET] Sent: TI
+[INFO][TARGETS] at [14:03:58:] [SOCKET] Echo received: TI
+[INFO][TARGETS] at [14:03:58:] TI[INFO][SOCKET] at [14:03:58:] TI[INFO][OBSTACLES] at [14:03:58:] Program type: standalone
+[INFO][OBSTACLES] at [14:03:58:] Host name: localhost
+[INFO][OBSTACLES] at [14:03:58:] Port number: 2000
+[INFO][WATCHDOG] at [14:03:58:] current pid 19874  symbol 7 
+[INFO][WATCHDOG] at [14:03:58:] Obstacles PID SET: 19874[INFO][OBSTACLES] at [14:03:58:] [SOCKET] Sent: OI
+[INFO][MAIN] at [14:03:58:] Child process with PID: 19885 terminated with exit status: 1
+[INFO][SOCKET] at [14:03:58:] OI[INFO][OBSTACLES] at [14:03:58:] [SOCKET] Echo received: OI
+[INFO][SERVER] at [14:03:58:] [PIPE] Received from interface.c: I1:102,26,204,53
+[INFO][SERVER] at [14:03:58:] [PIPE] Sent to drone.c: I1:102,26,204,53
+[INFO][SERVER] at [14:03:58:] [PIPE] Received from interface.c: I2:204.000,53.000
+[INFO][SERVER] at [14:03:58:] [PIPE] Sent to drone.c: I2:204.000,53.000
+[INFO][DRONE] at [14:03:58:] Obtained initial parameters from server: I1:102,26,204,53
+[INFO][SERVER] at [14:03:58:] [SOCKET] Sent: 204.000,53.000
+[INFO][SERVER] at [14:03:58:] [SOCKET] Echo received: 204.000,53.000
+[INFO][SERVER] at [14:03:58:] [SOCKET] Sent: 204.000,53.000
+[INFO][TARGETS] at [14:03:58:] [SOCKET] Sent: T[5]139.000,5.000|113.000,13.000|25.000,33.000|71.000,43.000|18.000,9.000
+[INFO][OBSTACLES - SOCKET] at [14:03:58:] 204.000,53.000[INFO][SERVER] at [14:03:58:] [SOCKET] Echo received: 204.000,53.000
+[INFO][SERVER] at [14:03:58:] [PIPE] Sent to drone.c: I2:204.000,53.000
+[INFO][OBSTACLES] at [14:03:58:] Generated Obstacles - O[1]173.000,16.000
+[INFO][SERVER] at [14:03:58:] [SOCKET] Received: T[5]139.000,5.000|113.000,13.000|25.000,33.000|71.000,43.000|18.000,9.000
+[INFO][SERVER] at [14:03:58:] [SOCKET] Echo sent: T[5]139.000,5.000|113.000,13.000|25.000,33.000|71.000,43.000|18.000,9.000
+[INFO][TARGETS] at [14:03:58:] [SOCKET] Echo received: T[5]139.000,5.000|113.000,13.000|25.000,33.000|71.000,43.000|18.000,9.000
+[INFO][SERVER] at [14:03:58:] [PIPE] Sent to interface.c: T[5]139.000,5.000|113.000,13.000|25.000,33.000|71.000,43.000|18.000,9.000
+[INFO][OBSTSACLES] at [14:03:59:] [SOCKET] Sent: O[1]173.000,16.000
+[INFO][SERVER] at [14:03:59:] [SOCKET] Received: O[1]173.000,16.000
+[INFO][SERVER] at [14:03:59:] [SOCKET] Echo sent: O[1]173.000,16.000
+[INFO][OBSTSACLES] at [14:03:59:] [SOCKET] Echo received: O[1]173.000,16.000
+[INFO][SERVER] at [14:03:59:] [PIPE] Send to interface.c: O[1]173.000,16.000
+[INFO][SERVER] at [14:03:59:] [PIPE] Sent to drone.c: O[1]173.000,16.000
+[INFO][OBSTACLES] at [14:03:59:] Generated Obstacles - O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:03:59:] [SOCKET] Received: /
+[INFO][SERVER] at [14:03:59:] [SOCKET] Echo sent: /
+[INFO][SERVER] at [14:03:59:] [PIPE] Send to interface.c: /
+[INFO][SERVER] at [14:03:59:] [PIPE] Sent to drone.c: /
+[INFO][SERVER] at [14:03:59:] [PIPE] Received from drone.c: D:102,26
+[INFO][SERVER] at [14:03:59:] [PIPE] Sent to interface.c: D:102,26
+[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:03:59:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][SERVER] at [14:04:00:] [SOCKET] Received: O[2]173.000,16.000|34.000,16.000
+[INFO][OBSTSACLES] at [14:04:00:] [SOCKET] Sent: O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [SOCKET] Echo sent: O[2]173.000,16.000|34.000,16.000
+[INFO][OBSTSACLES] at [14:04:00:] [SOCKET] Sent: O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [PIPE] Send to interface.c: O[2]173.000,16.000|34.000,16.000
+[INFO][OBSTSACLES] at [14:04:00:] [SOCKET] Echo received: O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [PIPE] Sent to drone.c: O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [SOCKET] Received: /O[2]173.000,16.000|34.000,16.000
+[INFO][OBSTACLES] at [14:04:00:] Generated Obstacles - O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:00:] [SOCKET] Echo sent: /O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [PIPE] Send to interface.c: /O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [PIPE] Sent to drone.c: /O[2]173.000,16.000|34.000,16.000
+[INFO][SERVER] at [14:04:00:] [SOCKET] Received: //
+[INFO][SERVER] at [14:04:00:] [SOCKET] Echo sent: //
+[INFO][SERVER] at [14:04:00:] [PIPE] Send to interface.c: //
+[INFO][SERVER] at [14:04:00:] [PIPE] Sent to drone.c: //
+[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:00:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: /O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: /O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: /O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: /O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: //O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: //O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: //O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: //O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ///O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ///O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ///O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ///O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: /////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: /////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: /////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: /////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: //////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: //////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: //////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: //////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ///////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ///////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ///////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ///////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: /////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: /////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: /////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: /////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: //////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: //////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: //////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: //////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ///////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ///////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ///////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ///////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: /////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: /////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: /////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: /////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: //////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: //////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: //////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: //////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ///////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ///////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ///////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ///////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: ////////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: ////////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: ////////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: ////////////////O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][SERVER] at [14:04:01:] [SOCKET] Received: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][OBSTSACLES] at [14:04:01:] [SOCKET] Echo received: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: O[3]173.000,16.000|34.000,16.000|97.000,10.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Received: /
+[INFO][OBSTACLES] at [14:04:01:] Generated Obstacles - O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:01:] [SOCKET] Echo sent: /
+[INFO][SERVER] at [14:04:01:] [PIPE] Send to interface.c: /
+[INFO][SERVER] at [14:04:01:] [PIPE] Sent to drone.c: /
+[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:01:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][SERVER] at [14:04:02:] [SOCKET] Received: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][OBSTSACLES] at [14:04:02:] [SOCKET] Sent: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][OBSTSACLES] at [14:04:02:] [SOCKET] Sent: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [SOCKET] Echo sent: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][OBSTSACLES] at [14:04:02:] [SOCKET] Echo received: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [PIPE] Send to interface.c: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][OBSTACLES] at [14:04:02:] Generated Obstacles - O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:02:] [PIPE] Sent to drone.c: O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [SOCKET] Received: /O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [SOCKET] Echo sent: /O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [PIPE] Send to interface.c: /O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [PIPE] Sent to drone.c: /O[4]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000
+[INFO][SERVER] at [14:04:02:] [SOCKET] Received: //
+[INFO][SERVER] at [14:04:02:] [SOCKET] Echo sent: //
+[INFO][SERVER] at [14:04:02:] [PIPE] Send to interface.c: //
+[INFO][SERVER] at [14:04:02:] [PIPE] Sent to drone.c: //
+[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:02:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][OBSTSACLES] at [14:04:03:] [SOCKET] Sent: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][OBSTSACLES] at [14:04:03:] [SOCKET] Sent: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][OBSTSACLES] at [14:04:03:] [SOCKET] Sent: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Received: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][OBSTSACLES] at [14:04:03:] [SOCKET] Echo received: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][OBSTACLES] at [14:04:03:] Generated Obstacles - O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Echo sent: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [PIPE] Send to interface.c: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [PIPE] Sent to drone.c: O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Received: /O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Echo sent: /O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [PIPE] Send to interface.c: /O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [PIPE] Sent to drone.c: /O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Received: //O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Echo sent: //O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [PIPE] Send to interface.c: //O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [PIPE] Sent to drone.c: //O[5]173.000,16.000|34.000,16.000|97.000,10.000|151.000,24.000|77.000,22.000
+[INFO][SERVER] at [14:04:03:] [SOCKET] Received: ///
+[INFO][SERVER] at [14:04:03:] [SOCKET] Echo sent: ///
+[INFO][SERVER] at [14:04:03:] [PIPE] Send to interface.c: ///
+[INFO][SERVER] at [14:04:03:] [PIPE] Sent to drone.c: ///
+[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:03:] Your current score: 0[INFO][INTERFACE] at [14:04:04:] Your current score: 0[INFO][INTERFACE] at [14:04:04:] Your current score: 0[INFO][TARGETS] at [14:04:04:] Caught SIGINT 
+[INFO][OBSTACLES] at [14:04:04:] Caught SIGINT[INFO][SERVER] at [14:04:04:] Caught SIGINT
+[INFO][KEY MANAGER] at [14:04:04:] Caught SIGINT 
+[INFO][SERVER] at [14:04:04:] Clean up has been performed succesfully
+[INFO][MAIN] at [14:04:04:] Caught SIGINT, killing all children... 
