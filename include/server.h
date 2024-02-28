@@ -10,4 +10,6 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context);
 void *create_shm(char *name);
 void clean_up();
 
+void shared_memory_handler(char name);
+
 #endif // SERVER_H

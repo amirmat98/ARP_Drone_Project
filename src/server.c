@@ -17,14 +17,8 @@ int targets_server[2];
 // Attach to shared memory for key presses
 void *ptr_wd;                           // Shared memory for WD
 void *ptr_logs;                         // Shared memory ptr for logs
-
-
-sem_t *sem_logs_1;
-sem_t *sem_logs_2;
-sem_t *sem_logs_3;
+sem_t *sem_logs_1, *sem_logs_2, *sem_logs_3; // Semaphores for logger
 sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
-
-
 
 int main(int argc, char *argv[])
 {
@@ -41,71 +35,17 @@ int main(int argc, char *argv[])
     sigaction (SIGUSR1, &sa, NULL);
 
     // Shared memory and semaphores for WATCHDOG
-    ptr_wd = create_shm(SHAREMEMORY_WD);
-    sem_wd_1 = sem_open(SEMAPHORE_WD_1, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
-    if (sem_wd_1 == SEM_FAILED) {
-        perror("sem_wd_1 failed");
-        exit(1);
-    }
-    sem_wd_2 = sem_open(SEMAPHORE_WD_2, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
-    if (sem_wd_2 == SEM_FAILED) {
-        perror("sem_wd_2 failed");
-        exit(1);
-    }
-    sem_wd_3 = sem_open(SEMAPHORE_WD_3, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
-    if (sem_wd_3 == SEM_FAILED) {
-        perror("sem_wd_2 failed");
-        exit(1);
-    }
-
-    // Shared memory for LOGS
-    ptr_logs = create_shm(SHAREMEMORY_LOGS);
-    sem_logs_1 = sem_open(SEMAPHORE_LOGS_1, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
-    if (sem_logs_1 == SEM_FAILED) 
-    {
-        perror("sem_logs_1 failed");
-        exit(1);
-    }
-    sem_logs_2 = sem_open(SEMAPHORE_LOGS_2, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
-    if (sem_logs_2 == SEM_FAILED) 
-    {
-        perror("sem_logs_1 failed");
-        exit(1);
-    }
-    sem_logs_3 = sem_open(SEMAPHORE_LOGS_3, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
-    if (sem_logs_3 == SEM_FAILED) 
-    {
-        perror("sem_logs_1 failed");
-        exit(1);
-    }
-
+    shared_memory_handler('W');
     
+    // Shared memory and semaphores for LOGS
+    shared_memory_handler('L');
 
     // when all shm are created publish your pid to WD
     publish_pid_to_wd(SERVER_SYM, getpid());
 
 
-    // Timeout
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
     // To compare current and previous data
     char prev_drone_msg[MSG_LEN] = "";
-
-    fd_set reader;
-    fd_set master;
-
-    FD_ZERO(&reader);
-    FD_ZERO(&master);
-
-    FD_SET(km_server[0], &master);
-    FD_SET(interface_server[0], &master);
-    FD_SET(drone_server[0], &master);
-    FD_SET(obstacles_server[0], &master);
-    FD_SET(targets_server[0], &master);
-
-
 
     //Main loop
     while(1)
@@ -115,69 +55,41 @@ int main(int argc, char *argv[])
         /* Handle pipe from key_manager.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_km;
-        FD_ZERO(&read_km);
-        FD_SET(km_server[0], &read_km);
-
         char km_msg[MSG_LEN];
+        if(read_from_pipe(km_server[0], km_msg))
+        {
+            // Read acknowledgement
+            printf("RECEIVED %s from key_manager.c\n", km_msg);
+            fflush(stdout);
+            // Response
+            char response_km_msg[MSG_LEN*2];
+            sprintf(response_km_msg, "K:%s", km_msg);
+            write_to_pipe(server_drone[1], response_km_msg);
+            printf("SENT %s to drone.c\n", response_km_msg);
+            fflush(stdout);
+        }
 
-        int ready_km = select(km_server[0] + 1, &read_km, NULL, NULL, &timeout);
-        if (ready_km == -1) 
-        {
-            perror("Error in select");
-        }
-        if (ready_km > 0 && FD_ISSET(km_server[0], &read_km)) 
-        {
-            ssize_t bytes_read_km = read(km_server[0], km_msg, MSG_LEN);
-            if (bytes_read_km > 0) 
-            {
-                // Read acknowledgement
-                printf("RECEIVED %s from key_manager.c\n", km_msg);
-                fflush(stdout);
-                // Response
-                char response_km_msg[MSG_LEN*2];
-                sprintf(response_km_msg, "K:%s", km_msg);
-                write_to_pipe(server_drone[1], response_km_msg);
-                printf("SENT %s to drone.c\n", response_km_msg);
-                fflush(stdout);
-            }
-        }
 
         //////////////////////////////////////////////////////
         /* Handle pipe from interface.c */
         /////////////////////////////////////////////////////
-
-        fd_set read_interface;
-        FD_ZERO(&read_interface);
-        FD_SET(interface_server[0], &read_interface);
         
         char interface_msg[MSG_LEN];
-
-        int ready_interface = select(interface_server[0] + 1, &read_interface, NULL, NULL, &timeout);
-        if (ready_interface == -1) 
+        if(read_from_pipe(interface_server[0], interface_msg))
         {
-            perror("Error in select");
-        }
-
-        if (ready_interface > 0 && FD_ISSET(interface_server[0], &read_interface))
-        {
-            ssize_t bytes_read_interface = read(interface_server[0], interface_msg, MSG_LEN);
-            if (bytes_read_interface > 0) 
+            // Read acknowledgement
+            printf("RECEIVED %s from interface.c\n", interface_msg);
+            fflush(stdout);
+            // Response for drone.c
+            write_to_pipe(server_drone[1], interface_msg);
+            printf("SENT %s to drone.c\n", interface_msg);
+            fflush(stdout);
+            // Response for obstacles.c and targets.c
+            if(interface_msg[0] == 'I' && interface_msg[1] == '2')
             {
-                // Read acknowledgement
-                printf("RECEIVED %s from interface.c\n", interface_msg);
-                fflush(stdout);
-                // Response for drone.c
-                write_to_pipe(server_drone[1], interface_msg);
-                printf("SENT %s to drone.c\n", interface_msg);
-                fflush(stdout);
-                // Response for obstacles.c and targets.c
-                if(interface_msg[0] == 'I' && interface_msg[1] == '2')
-                {
-                    write_to_pipe(server_obstacles[1],interface_msg);
-                    write_to_pipe(server_targets[1],interface_msg);
-                    printf("SENT %s to obstacles.c and targets.c\n", interface_msg);
-                }
+                write_to_pipe(server_obstacles[1],interface_msg);
+                write_to_pipe(server_targets[1],interface_msg);
+                printf("SENT %s to obstacles.c and targets.c\n", interface_msg);
             }
         }
 
@@ -185,111 +97,56 @@ int main(int argc, char *argv[])
         /* Handle pipe from drone.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_drone;
-        FD_ZERO(&read_interface);
-        FD_SET(drone_server[0], &read_drone);
-        
         char drone_msg[MSG_LEN];
 
-        int ready_drone = select(drone_server[0] + 1, &read_drone, NULL, NULL, &timeout);
-        if (ready_drone == -1) 
+        if(read_from_pipe(drone_server[0], drone_msg))
         {
-            perror("Error in select");
-        }
-
-        if (ready_drone > 0 && FD_ISSET(drone_server[0], &read_drone))
-        {
-            ssize_t bytes_read_drone = read(drone_server[0], drone_msg, MSG_LEN);
-            if (bytes_read_drone > 0) 
+            write_to_pipe(server_interface[1], drone_msg);
+            if (strcmp(drone_msg, prev_drone_msg) != 0) 
             {
-                write_to_pipe(server_interface[1], drone_msg);
-                if (strcmp(drone_msg, prev_drone_msg) != 0) 
-                {
-                    printf("RECEIVED %s from drone.c\n", drone_msg);
-                    fflush(stdout);
-                    strcpy(prev_drone_msg, drone_msg); // Update previous values
-                    printf("SENT %s to interface.c\n", drone_msg);
-                    fflush(stdout);
-                }
-            }
-            else if (bytes_read_drone == -1)
-            {
-                perror("Read pipe drone_server");
+                printf("RECEIVED %s from drone.c\n", drone_msg);
+                fflush(stdout);
+                strcpy(prev_drone_msg, drone_msg); // Update previous values
+                printf("SENT %s to interface.c\n", drone_msg);
+                fflush(stdout);
             }
         }
+        
 
         //////////////////////////////////////////////////////
         /* Handle pipe from obstacles.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_obstacles;
-        FD_ZERO(&read_obstacles);
-        FD_SET(obstacles_server[0], &read_obstacles);
-        
         char obstacles_msg[MSG_LEN];
-
-        int ready_obstacles = select(obstacles_server[0] + 1, &read_obstacles, NULL, NULL, &timeout);
-        if (ready_obstacles == -1) 
+        if (read_from_pipe(obstacles_server[0], obstacles_msg))
         {
-            perror("Error in select");
-        }
-
-        if (ready_obstacles > 0 && FD_ISSET(obstacles_server[0], &read_obstacles)) 
-        {
-            ssize_t bytes_read_obstacles = read(obstacles_server[0], obstacles_msg, MSG_LEN);
-            if (bytes_read_obstacles > 0) 
-            {
-                // Read acknowledgement
-                printf("RECEIVED %s from obstacles.c\n", obstacles_msg);
-                fflush(stdout);
-                // Send to interface.c
-                write_to_pipe(server_interface[1],obstacles_msg);
-                printf("SENT %s to interface.c\n", obstacles_msg);
-                fflush(stdout);
-                // Send to drone.c
-                write_to_pipe(server_drone[1], obstacles_msg);
-                printf("SENT %s to drone.c\n", obstacles_msg);
-                fflush(stdout);
-            }
-            else if (bytes_read_obstacles == -1) 
-            {
-                perror("Read pipe obstacles_server");
-            }
+            // Read acknowledgement
+            printf("RECEIVED %s from obstacles.c\n", obstacles_msg);
+            fflush(stdout);
+            // Send to interface.c
+            write_to_pipe(server_interface[1],obstacles_msg);
+            printf("SENT %s to interface.c\n", obstacles_msg);
+            fflush(stdout);
+            // Send to drone.c
+            write_to_pipe(server_drone[1], obstacles_msg);
+            printf("SENT %s to drone.c\n", obstacles_msg);
+            fflush(stdout);
         }
 
         //////////////////////////////////////////////////////
         /* Handle pipe from targets.c */
         /////////////////////////////////////////////////////
 
-        fd_set read_targets;
-        FD_ZERO(&read_targets);
-        FD_SET(targets_server[0], &read_targets);
-        
         char targets_msg[MSG_LEN];
-
-        int ready_targets = select(targets_server[0] + 1, &read_targets, NULL, NULL, &timeout);
-        if (ready_targets == -1) 
+        if (read_from_pipe(targets_server[0], targets_msg))
         {
-            perror("Error in select");
-        }
-
-        if (ready_targets > 0 && FD_ISSET(targets_server[0], &read_targets)) 
-        {
-            ssize_t bytes_read_targets = read(targets_server[0], targets_msg, MSG_LEN);
-            if (bytes_read_targets > 0) 
-            {
-                // Read acknowledgement
-                printf("RECEIVED %s from targets.c\n", targets_msg);
-                fflush(stdout);
-                // Send to interface.c
-                write_to_pipe(server_interface[1],targets_msg);
-                printf("SENT %s to interface.c\n", targets_msg);
-                fflush(stdout);
-            }
-            else if (bytes_read_targets == -1) 
-            {
-                perror("Read pipe targets_server");
-            }
+            // Read acknowledgement
+            printf("RECEIVED %s from targets.c\n", targets_msg);
+            fflush(stdout);
+            // Send to interface.c
+            write_to_pipe(server_interface[1],targets_msg);
+            printf("SENT %s to interface.c\n", targets_msg);
+            fflush(stdout);
         }
 
     }
@@ -369,4 +226,55 @@ void clean_up()
     shm_unlink(SHAREMEMORY_WD);
 
     printf("Clean up has been performed succesfully\n");
+}
+
+void shared_memory_handler(char name)
+{
+    // Shared memory and semaphores for WATCHDOG
+    if (name == 'W')
+    {
+        ptr_wd = create_shm(SHAREMEMORY_WD);
+        sem_wd_1 = sem_open(SEMAPHORE_WD_1, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
+        if (sem_wd_1 == SEM_FAILED) 
+        {
+            perror("sem_wd_1 failed");
+            exit(1);
+        }
+        sem_wd_2 = sem_open(SEMAPHORE_WD_2, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
+        if (sem_wd_2 == SEM_FAILED) 
+        {
+            perror("sem_wd_2 failed");
+            exit(1);
+        }
+        sem_wd_3 = sem_open(SEMAPHORE_WD_3, O_CREAT, S_IRUSR | S_IWUSR, 0); // 0 for locked, this semaphore is unlocked by WD in order to get pids
+        if (sem_wd_3 == SEM_FAILED) 
+        {
+            perror("sem_wd_2 failed");
+            exit(1);
+        }
+    }
+
+    // Shared memory for LOGS
+    else if (name == 'L')
+    {
+        ptr_logs = create_shm(SHAREMEMORY_LOGS);
+        sem_logs_1 = sem_open(SEMAPHORE_LOGS_1, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
+        if (sem_logs_1 == SEM_FAILED) 
+        {
+            perror("sem_logs_1 failed");
+            exit(1);
+        }
+        sem_logs_2 = sem_open(SEMAPHORE_LOGS_2, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
+        if (sem_logs_2 == SEM_FAILED) 
+        {
+            perror("sem_logs_1 failed");
+            exit(1);
+        }
+        sem_logs_3 = sem_open(SEMAPHORE_LOGS_3, O_CREAT, S_IRUSR | S_IWUSR, 0); // this dude is locked
+        if (sem_logs_3 == SEM_FAILED) 
+        {
+            perror("sem_logs_1 failed");
+            exit(1);
+        }
+    }
 }
