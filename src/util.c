@@ -103,21 +103,26 @@ void read_and_echo(int socket_des, char socket_msg[])
     int bytes_read, bytes_written;
     bzero(socket_msg, MSG_LEN);
 
+    int correct_bytes_read = 0;
+
     // Read from the socket
-    block_signal(SIGUSR1);
-    bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
-    unblock_signal(SIGUSR1);
-    if (bytes_read < 0) 
+    while(correct_bytes_read == 0)
     {
-        perror("ERROR reading from socket");
-    }
-    else if (bytes_read == 0)
-    {
-        return; // Connection closed
-    }
-    else if (socket_msg[0] == '\0')
-    {
-        return; // Empty message
+        block_signal(SIGUSR1);
+        bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
+        unblock_signal(SIGUSR1);
+        if (bytes_read < 0) 
+        {
+            perror("ERROR reading from socket");
+        }
+        else if (bytes_read == 0)
+        {
+            return; // Connection closed
+        }
+        else if (socket_msg[0] == '\0')
+        {
+            return; // Empty message
+        }
     }
 
     // printf("[SOCKET] Received: %s\n", socket_msg);
