@@ -1,7 +1,8 @@
+// Include necessary header files
 #include "key_manager.h"
 #include "import.h"
 
-// Global variables for pipe descriptors to handle inter-process communication
+// Global variables for inter-process communication
 // Pipes working with the server
 int key_pressing_read;
 // Pipes working with the server
@@ -25,7 +26,7 @@ int main(int argc, char *argv[])
     // Main loop to process key presses indefinitely
     while(1)
     {
-        /*THIS SECTION IS FOR OBTAINING THE KEY INPUT CHARACTER*/
+        /* Obtain the key input character*/
 
         fd_set readset_km;
         // Initializes the file descriptor set readset by clearing all file descriptors from it.
@@ -40,22 +41,15 @@ int main(int argc, char *argv[])
             ready = select(key_pressing_read + 1, &readset_km, NULL, NULL, NULL);
         } while (ready == -1 && errno == EINTR);
 
-        // Read from the file descriptor
+        // Read the pressed key from the file descriptor
         int pressed_key = read_key_from_pipe(key_pressing_read);
         printf("Pressed key: %c\n", (char)pressed_key); // Display the pressed key
 
-
-        /*THIS SECTION IS FOR DRONE ACTION DECISION*/
+        /* Determine the action based on the pressed key*/
 
         char *action = determine_action(pressed_key);
         // printf("Action sent to drone: %s\n\n", action);
         fflush(stdout);
-
-        /*
-        char key = toupper(pressed_key);
-        int x; int y;
-        // char action_msg[20];
-        */
 
         // If the action is not "None", send it to the server
         if (strcmp(action, "None") != 0) 
@@ -86,7 +80,7 @@ void get_args(int argc, char *argv[])
     sscanf(argv[1], "%d %d", &key_pressing_read, &km_server_write);
 }
 
-
+// Signal handler function
 void signal_handler(int signo, siginfo_t *siginfo, void *context) 
 {
     // printf("Received signal number: %d \n", signo);
