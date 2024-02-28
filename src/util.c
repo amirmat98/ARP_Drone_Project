@@ -52,7 +52,7 @@ void log_msg(char *file_path, char* who, char *message)
     char *eol = "\n";
     sprintf(time, "%02d:%02d:%02d", hours, minutes, seconds);
     
-    fprintf(file_fd, "[INFO][%s] at [%s:] %s", who, time, message);
+    fprintf(file_fd, "[INFO][%s] at [%s] %s", who, time, message);
     fclose(file_fd); //close file at the end
     message = ""; // clear the buffer
 }
@@ -80,7 +80,7 @@ void log_err(char *file_path, char* who, char *message)
     char *eol = "\n";
     sprintf(time, "%02d:%02d:%02d", hours, minutes, seconds);
     
-    fprintf(file_fd, "[ERROR][%s] at [%s:] %s", who, time, message);
+    fprintf(file_fd, "[ERROR][%s] at [%s] %s", who, time, message);
     fclose(file_fd); //close file at the end
     message = ""; // clear the buffer
 }
