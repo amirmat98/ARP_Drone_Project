@@ -12,7 +12,9 @@
         "errno.h": "c",
         "fcntl.h": "c",
         "wait.h": "c",
-        "constants.h": "c"
+        "constants.h": "c",
+        "import.h": "c",
+        "server.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

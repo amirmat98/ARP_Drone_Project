@@ -1,23 +1,6 @@
 #include "interface.h"
-#include "constants.h"
-#include "util.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
-#include <sys/ipc.h>
-#include <sys/mman.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/select.h>
-
-#include <fcntl.h>
+#include "import.h"
 #include <ncurses.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <errno.h>
 
 
 // File descriptor for writing key press data to a serverless pipe.

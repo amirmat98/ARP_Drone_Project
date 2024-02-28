@@ -1,24 +1,5 @@
 #include "obstacles.h"
-#include "util.h"
-#include "constants.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-#include <string.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <stdbool.h>
-
-#include <semaphore.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <errno.h>
+#include "import.h"
 
 
 // Pipes working with the server

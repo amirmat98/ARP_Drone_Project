@@ -1,24 +1,5 @@
 #include "drone.h"
-#include "constants.h"
-#include "util.h"
-
-#include <stdio.h>       
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-
-#include <fcntl.h>
-#include <math.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <string.h>
-#include <errno.h>
+#include "import.h"
 
 // Serverless pipes
 int lowest_target_fd[2];

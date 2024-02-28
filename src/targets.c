@@ -1,21 +1,5 @@
-#include "constants.h"
 #include "targets.h"
-#include "util.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdbool.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-
-#include <signal.h>
+#include "import.h"
 
 // Pipe file descriptors for reading from the server and writing to the server
 int server_targets[0];

@@ -1,14 +1,5 @@
 #include "main.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <time.h>
-
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <signal.h>
+#include "import.h"
 
 // Serverless pipes (fd)
 int key_pressing_des[2];
@@ -191,7 +182,7 @@ int main(int argc, char *argv[])
     char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL};
     wd_pid = create_child(wd_args[0], wd_args);
     number_process++;
-    printf("Watchdog Created\n");
+    // printf("Watchdog Created\n");
     
 
     /* Window - Interface */
