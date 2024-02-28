@@ -24,10 +24,14 @@ int main(int argc, char *argv[])
     // Variable declaration
     int x; int y;
     int screen_size_x; int screen_size_y;
-    int action_x; int action_y;    
+    int action_x = 0; int action_y = 0;    
     int target_x; int target_y;
     int valid_target;
 
+    // Timeout
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
 
     // Variables for differential_equations
     double pos_x;
@@ -56,32 +60,18 @@ int main(int argc, char *argv[])
         /* SECTION 1: READ DATA FROM SERVER */
         /////////////////////////////////////////////////////
         
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(server_drone[0], &read_fds);
-
-        struct timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
-
-        int ready = select (server_drone[0] + 1, &read_fds, NULL, NULL, &timeout);
-        if (ready == -1)
+        // Read from the server
+        if (read_from_pipe(server_drone[0], server_msg))
         {
-            perror("Error in select");
-        }
-
-        if (ready > 0 && FD_ISSET(server_drone[0], &read_fds))
-        {
-            ssize_t bytes_read = read(server_drone[0], server_msg, MSG_LEN);
-            if (bytes_read > 0)
+            switch (server_msg[0])
             {
-                 // Message origin: Keyboard Manager
-                if(server_msg[0] == 'K')
-                {
-                    sscanf(server_msg, "K:%d,%d", &action_x, &action_y);
-                }
+            case 'K':
+                // Message origin: Keyboard Manager
+                sscanf(server_msg, "K:%d,%d", &action_x, &action_y);
+                break;
+            case 'I':
                 // Message origin: Interface
-                else if(server_msg[0] == 'I' && server_msg[1] == '1')
+                if (server_msg[1] == '1')
                 {
                     sscanf(server_msg, "I1:%d,%d,%d,%d", &x, &y, &screen_size_x, &screen_size_y);
                     printf("Obtained initial parameters from server: %s\n", server_msg);
@@ -89,28 +79,23 @@ int main(int argc, char *argv[])
                     pos_y = (double)y;
                     fflush(stdout);
                 }
-                // Message origin: Interface
-                else if(server_msg[0] == 'I' && server_msg[1] == '2')
+                else if (server_msg[1] == '2')
                 {
                     sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
-                    // printf("Changed screen dimensions to: %s\n", server_msg);
+                    printf("Changed screen dimensions to: %s\n", server_msg);
                     fflush(stdout);
                 }
+            case 'O':
                 // Message origin: Obstacles
-                else if (server_msg[0 == 'O'])
-                {
-                    // printf("Obtained obstacles message: %s\n", server_msg);
-                    parse_obstacles_msg(server_msg, obstacles, &number_obstacles);
-                    obtained_obstacles = 1;
-                }
+                // printf("Obtained obstacles message: %s\n", server_msg);
+                parse_obstacles_msg(server_msg, obstacles, &number_obstacles);
+                obtained_obstacles = 1;
+            default:
+                action_x = 0;
+                action_y = 0;
+                break;
             }
         }
-        else
-        {
-            action_x = 0;
-            action_y = 0;
-        }
-
 
         char obstacles_msg[] = "O[1]200,200"; // Random for initial execution
         if (obtained_obstacles == 0)
@@ -119,36 +104,17 @@ int main(int argc, char *argv[])
         }
 
         //////////////////////////////////////////////////////
-        /* SECTION 2: READ DATA FROM INTERFACE.C (SERVERLESS PIPE) */
+        /* SECTION 2: READ DATA FROM INTERFACE.C */
         /////////////////////////////////////////////////////
 
-        fd_set read_interface;
-        FD_ZERO(&read_interface);
-        FD_SET(lowest_target_fd[0], &read_interface);
-        
         char msg[MSG_LEN];
-
-        int ready_targets = select(lowest_target_fd[0] + 1, &read_interface, NULL, NULL, &timeout);
-        if (ready_targets == -1) 
+        if (read_from_pipe(lowest_target_fd[0], msg))
         {
-            perror("Error in select");
-        }
-
-        if (ready_targets > 0 && FD_ISSET(lowest_target_fd[0], &read_interface))
-        {
-            ssize_t bytes_read_interface = read(lowest_target_fd[0], msg, MSG_LEN);
-            if (bytes_read_interface > 0) 
-            {
-                // Read acknowledgement
-                // printf("RECEIVED %s from interface.c\n", msg);
-                sscanf(msg, "%d,%d", &target_x, &target_y);
-                fflush(stdout);
+            // Read acknowledgement
+            // printf("RECEIVED %s from interface.c\n", msg);
+            sscanf(msg, "%d,%d", &target_x, &target_y);
+            fflush(stdout);
                 valid_target = 1;
-            }
-            else if (bytes_read_interface == -1) 
-            {
-                perror("Read pipe lowest_target_fd");
-            }
         }
 
         //////////////////////////////////////////////////////
@@ -164,14 +130,7 @@ int main(int argc, char *argv[])
                 force_x += (double)action_x;
                 force_y += (double)action_y;
                 /* Capping to the max value of the drone's force */
-                if(force_x > F_MAX)
-                    {force_x = F_MAX;}
-                if(force_y > F_MAX)
-                    {force_y = F_MAX;}
-                if(force_x < -F_MAX)
-                    {force_x = -F_MAX;}
-                if(force_y < -F_MAX)
-                    {force_y = -F_MAX;}
+                force_check_handler(&force_x, &force_y, F_MAX, F_MAX);
             }
             // Other values represent STOP
             else
@@ -197,22 +156,7 @@ int main(int argc, char *argv[])
                 calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
             }
 
-            if(external_force_x > EXT_FORCE_MAX)
-            {
-                external_force_x = 0.0;
-            }
-            if(external_force_x < -EXT_FORCE_MAX)
-            {
-                external_force_x = 0.0;
-            }
-            if(external_force_y > EXT_FORCE_MAX)
-            {
-                external_force_y = 0.0;
-            }
-            if(external_force_y < -EXT_FORCE_MAX)
-            {
-                external_force_y = 0.0;
-            }
+            force_check_handler(&external_force_x, &external_force_y, EXT_FORCE_MAX, 0.0);
 
             //////////////////////////////////////////////////////
             /* SECTION 4: CALCULATE POSITION DATA */
@@ -228,8 +172,9 @@ int main(int argc, char *argv[])
             {
                 printf("Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
                 printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
-                printf("X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
-                printf("Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
+                printf("X - Position: %.2f / Y - Position: %.2f\n", pos_x, pos_y);
+                printf("Velocity: %.2f / Velocity: %.2f\n", v_x, v_y);
+                printf("--------------------------------------------------------\n");
                 fflush(stdout);
             }
             int x_f = (int)round(pos_x);
@@ -364,4 +309,24 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 void get_args(int argc, char *argv[])
 {
     sscanf(argv[1], "%d %d %d", &server_drone[0], &drone_server[1], &lowest_target_fd[0]);
+}
+
+void force_check_handler(double *item1, double *item2, double condition, double replacement)
+{
+    if (*item1 > condition)
+    {
+        *item1 = replacement;
+    }
+    if (*item2 > condition)
+    {
+        *item2 = replacement;
+    }
+    if (*item1 < -condition)
+    {
+        *item1 = replacement;
+    }
+    if (*item2 < -condition)
+    {
+        *item2 = replacement;
+    }
 }
