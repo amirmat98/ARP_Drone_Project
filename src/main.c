@@ -26,26 +26,6 @@ pid_t logger_pid;
 pid_t targets_pid;
 pid_t obstacles_pid;
 
-void signal_handler(int signo, siginfo_t *siginfo, void *context)
-{
-    if (signo == SIGINT)
-    {
-        printf("Caught SIGINT, killing all children... \n");
-        kill(server_pid, SIGKILL);
-        kill(window_pid, SIGKILL);
-        kill(km_pid, SIGKILL);
-        kill(drone_pid, SIGKILL);
-        kill(wd_pid, SIGKILL);
-        kill(logger_pid, SIGKILL);
-        kill(targets_pid, SIGKILL);
-        kill(obstacles_pid, SIGKILL);
-
-        printf("Closing all pipes.. \n");
-        close_all_pipes();
-
-        exit(1);
-    }
-}
 
 int main(int argc, char *argv[])
 {
@@ -57,66 +37,7 @@ int main(int argc, char *argv[])
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGUSR1, &sa, NULL);
     
-    // Serverless pipe creation
-    if (pipe(key_pressing_des) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(lowest_target_des) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-
-    // Pipe creation: To server
-    if (pipe(km_server) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(drone_server) == -1) 
-    {
-        perror("pipe");
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(interface_server) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(obstacles_server) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(targets_server) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-
-    // Pipe creation: From server
-    if (pipe(server_drone) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(server_interface) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(server_obstacles) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
-    if (pipe(server_targets) == -1) 
-    {
-        perror("pipe"); 
-        exit(EXIT_FAILURE);
-    }
+    pipe_error_handler();
 
     // Passing file descriptors for pipes used on server.c
     char server_fds[80];
@@ -190,13 +111,6 @@ int main(int argc, char *argv[])
     window_pid = create_child(window_args[0], window_args);
     number_process++;
     usleep(delay);
-
-
-    // /* Logger */ 
-    // char* logger_args[] = {"konsole", "-e", "./build/logger", NULL};
-    // logger_pid = create_child(logger_args[0], logger_args);
-    // number_process++;
-    // usleep(delay);
 
     /* Wait for all children to close */
     for (int i = 0; i < number_process; i++)
@@ -274,4 +188,84 @@ void close_all_pipes()
     close(obstacles_server[1]);
     close(server_targets[1]);
     close(targets_server[1]);
+}
+
+void pipe_error_handler()
+{
+   if (pipe(key_pressing_des) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(lowest_target_des) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(km_server) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(drone_server) == -1) 
+    {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(interface_server) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(obstacles_server) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(targets_server) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(server_drone) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(server_interface) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(server_obstacles) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    }
+    if (pipe(server_targets) == -1) 
+    {
+        perror("pipe"); 
+        exit(EXIT_FAILURE);
+    } 
+}
+
+void signal_handler(int signo, siginfo_t *siginfo, void *context)
+{
+    if (signo == SIGINT)
+    {
+        printf("Caught SIGINT, killing all children... \n");
+        kill(server_pid, SIGKILL);
+        kill(window_pid, SIGKILL);
+        kill(km_pid, SIGKILL);
+        kill(drone_pid, SIGKILL);
+        kill(wd_pid, SIGKILL);
+        kill(logger_pid, SIGKILL);
+        kill(targets_pid, SIGKILL);
+        kill(obstacles_pid, SIGKILL);
+
+        printf("Closing all pipes.. \n");
+        close_all_pipes();
+
+        exit(1);
+    }
 }

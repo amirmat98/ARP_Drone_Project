@@ -28,11 +28,6 @@ int main(int argc, char *argv[])
     int target_x; int target_y;
     int valid_target;
 
-    // Timeout
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
     // Variables for differential_equations
     double pos_x;
     double v_x = 0.0;    // Initial velocity of x
@@ -137,6 +132,11 @@ int main(int argc, char *argv[])
             {
                 force_x = 0.0; 
                 force_y = 0.0;
+                if (action_x == 50.0 && action_y == 50.0)
+                {
+                    v_x = 0.0;
+                    v_y = 0.0;
+                }
             }
 
             /* EXTERNAL FORCE from obstacles and targets */
@@ -167,16 +167,12 @@ int main(int argc, char *argv[])
             differential_equations(&pos_x, &v_x, force_x, external_force_x, &max_x);
             differential_equations(&pos_y, &v_y, force_y, external_force_y, &max_y);
 
-            // Only print the positions when there is still velocity present.
-            if(fabs(v_x) > FLOAT_TOLERANCE || fabs(v_y) > FLOAT_TOLERANCE)
-            {
-                printf("Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
-                printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
-                printf("X - Position: %.2f / Y - Position: %.2f\n", pos_x, pos_y);
-                printf("Velocity: %.2f / Velocity: %.2f\n", v_x, v_y);
-                printf("--------------------------------------------------------\n");
-                fflush(stdout);
-            }
+            printf("Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
+            printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
+            printf("X - Position: %.2f / Y - Position: %.2f\n", pos_x, pos_y);
+            printf("Velocity: %.2f / Velocity: %.2f\n", v_x, v_y);
+            printf("--------------------------------------------------------\n");
+            fflush(stdout);
             int x_f = (int)round(pos_x);
             int y_f = (int)round(pos_y);
 

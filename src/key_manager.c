@@ -119,6 +119,7 @@ char* determine_action(int pressed_key)
         case 'Z': return "-1,1";
         case 'C': return "1,1";
         case 'S': return "10,0";
+        case 'H': return "50,50";
         default: return "None"; // If norecognized key, return "None" indicating no action
     }
 }
