@@ -89,7 +89,7 @@ void print_obstacles(Obstacle obstacles[], int number_obstacles, char obstacles_
             sprintf(obstacles_msg + strlen(obstacles_msg), "|");
         }
     }
-    printf("%s\n", obstacles_msg);
+    //printf("%s\n", obstacles_msg);
     fflush(stdout);
 }
 
@@ -101,7 +101,7 @@ void get_args(int argc, char *argv[])
 
 void receive_message_from_server(char *message, int *x, int *y)
 {
-    printf("Obtained from server: %s\n", message);
+    //printf("Obtained from server: %s\n", message);
     float temp_scx, temp_scy;
     sscanf(message, "I2:%f,%f", &temp_scx, &temp_scy);
     *x = (int)temp_scx;

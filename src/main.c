@@ -74,21 +74,20 @@ int main(int argc, char *argv[])
     number_process++;
     usleep(delay * 10); // little bit more time for server
 
-
     /* Targets */
-    char *targets_args[] = {"konsole", "-e", "./build/targets", targets_fds, NULL};
+    char *targets_args[] = {"./build/targets", targets_fds, NULL};
     targets_pid = create_child(targets_args[0], targets_args);
     number_process++;
     usleep(delay);
 
     /* Obstacles */
-    char *obstacles_args[] = {"konsole", "-e", "./build/obstacles", obstacles_fds, NULL};
+    char *obstacles_args[] = {"./build/obstacles", obstacles_fds, NULL};
     obstacles_pid = create_child(obstacles_args[0], obstacles_args);
     number_process++;
     usleep(delay);
 
     /* Keyboard manager */
-    char *km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_fds, NULL};
+    char *km_args[] = {"./build/key_manager", key_manager_fds, NULL};
     km_pid = create_child(km_args[0], km_args);
     number_process++;
     usleep(delay);
@@ -132,14 +131,6 @@ int main(int argc, char *argv[])
 
 }
 
-/*
-void create_pipes()
-{
-    pipe(key_pressing);
-
-    printf("Pipes Succesfully created");
-}
-*/
 
 int create_child(const char *program, char **arg_list)
 {

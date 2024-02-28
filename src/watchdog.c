@@ -84,10 +84,11 @@ int main(int argc, char* argv[])
     cnt_drone = 0;
     cnt_logger = 0;
 
-    while(1)
+    while (1)
     {
-        usleep(100000);
+        usleep(SLEEP_DELAY);
     }
+    
 
     return 0;
 }

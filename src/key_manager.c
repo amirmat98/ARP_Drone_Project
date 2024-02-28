@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
         // Read the pressed key from the file descriptor
         int pressed_key = read_key_from_pipe(key_pressing_read);
-        printf("Pressed key: %c\n", (char)pressed_key); // Display the pressed key
+        // printf("Pressed key: %c\n", (char)pressed_key); // Display the pressed key
 
         /* Determine the action based on the pressed key*/
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         if (strcmp(action, "None") != 0) 
         {
             write_to_pipe(km_server_write, action);
-            printf("Action sent to server: %s\n", action);
+            // printf("Action sent to server: %s\n", action);
         }         
     }
 

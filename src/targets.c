@@ -152,7 +152,7 @@ void make_target_msg(Target *targets, char *message)
         }
     }
     message[offset] = '\0'; // Null-terminate the string
-    printf("%s\n", message);
+    //printf("%s\n", message);
 }
 
 void data_from_server_handler(char *message, int *screen_x, int *screen_y)
@@ -161,6 +161,6 @@ void data_from_server_handler(char *message, int *screen_x, int *screen_y)
     sscanf(message, "I2:%f,%f", &temp_scx, &temp_scy);
     *screen_x = (int)temp_scx;
     *screen_y = (int)temp_scy;
-    printf("Obtained from server: %s\n", message);
+    //printf("Obtained from server: %s\n", message);
     fflush(stdout);
 } 
