@@ -10,5 +10,7 @@ void write_to_pipe(int pipe_des, char message[]);
 
 void write_message_to_logger(int who, int type, char *msg);
 
+int read_from_pipe(int pipe_des, char message[]);
+
 
 #endif // UTIL_H

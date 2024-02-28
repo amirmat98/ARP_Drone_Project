@@ -29,8 +29,11 @@ clean:
 	rm -f $(BUILDDIR)/key_manager
 	rm -f $(BUILDDIR)/drone
 	rm -f $(BUILDDIR)/watchdog
+	rm -f $(BUILDDIR)/targets
+	rm -f $(BUILDDIR)/obstacles
 	rm -f $(BUILDDIR)/logger
 	rm -f $(BUILDDIR)/util
+	rm -f $(BUILDDIR)/util.o
 
 
 drone:

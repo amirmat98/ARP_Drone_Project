@@ -17,7 +17,7 @@
 
 #include <signal.h>
 
-// Pipes working with the server
+// Pipe file descriptors for reading from the server and writing to the server
 int server_targets[0];
 int targets_server[1];
 
@@ -25,12 +25,7 @@ int main(int argc, char *argv[])
 {
     get_args(argc, argv);
 
-    // Timeout
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
-    // To compare previous values
+    // Flags to track whether dimensions and targets have been obtained
     bool obtained_dimensions = false;
     bool targets_created = false;;
 
@@ -38,59 +33,35 @@ int main(int argc, char *argv[])
     int screen_size_x; int screen_size_y;
     float scale_x;
     float scale_y;
-
     int counter = 0;
 
 
     while(1)
     {
+        /* STEP 1: READ THE DATA FROM SERVER*/
 
-        //////////////////////////////////////////////////////
-        /* SECTION 1: READ THE DATA FROM SERVER*/
-        /////////////////////////////////////////////////////
-
-        fd_set read_server;
-        FD_ZERO(&read_server);
-        FD_SET(server_targets[0], &read_server);
-        
+        // Message buffer for communication with the server
         char server_msg[MSG_LEN] = {0};
-
-        int ready = select(server_targets[0] + 1, &read_server, NULL, NULL, &timeout);
-        if (ready == -1) 
+        // Check if there is data to read from the server and handle it
+        if (read_from_pipe(server_targets[0], server_msg))
         {
-            perror("Error in select");
-            break; // Exit loop on select error
+            data_from_server_handler(server_msg, &screen_size_x, &screen_size_y);
+            obtained_dimensions = true;
         }
-
-        if (ready > 0 && FD_ISSET(server_targets[0], &read_server)) 
-        {
-            ssize_t bytes_read = read(server_targets[0], server_msg, MSG_LEN);
-            if (bytes_read > 0) 
-            {
-                server_msg[bytes_read] = '\0'; // Ensure string is null terminated
-                float temp_scx, temp_scy;
-                sscanf(server_msg, "I2:%f,%f", &temp_scx, &temp_scy);
-                screen_size_x = (int)temp_scx;
-                screen_size_y = (int)temp_scy;
-                printf("Obtained from server: %s\n", server_msg);
-                fflush(stdout);
-                obtained_dimensions = true;
-            }
-        }
+        // Skip the remaining steps if dimensions are not obtained
         if(obtained_dimensions == false)
         {
             continue;
         }
 
-        //////////////////////////////////////////////////////
-        /* SECTION 2: TARGET GENERATION & SEND DATA*/
-        /////////////////////////////////////////////////////
-        
+        /* Step 2: Generate targets and send data*/
+            
         // Array to store generated targets
         Target targets[MAX_TARGETS];
         // Set seed for random number generation
         srand(time(NULL));
 
+        // Check if targets have been created
         if(targets_created == false)
         {
             // Generate random order for distributing targets across sectors
@@ -106,7 +77,7 @@ int main(int argc, char *argv[])
                 targets[i] = temp_target;
             }
 
-            // make target messages
+            // Create target message
             char targets_msg[MSG_LEN];
             make_target_msg(targets, targets_msg);
 
@@ -116,7 +87,7 @@ int main(int argc, char *argv[])
         }
 
         // Delay
-        usleep(500000);  
+        usleep(5 * SLEEP_DELAY);  
 
     }
 
@@ -127,17 +98,20 @@ int main(int argc, char *argv[])
 
 void generate_random_cordinates(int sector_width, int sector_height, int *x, int *y)
 {
+    // Generate random coordinates within the sector boundaries
     *x = (int)(0.05 * sector_width) + (rand() % (int)(0.95 * sector_width));
     *y = (int)(0.05 * sector_height) + (rand() % (int)(0.95 * sector_height));
 }
 
 void get_args(int argc, char *argv[])
 {
+    // Parse command line arguments to obtain pipe file descriptors
     sscanf(argv[1], "%d %d", &server_targets[0], &targets_server[1]);
 }
 
 void generate_random_order(int *order, int max_targets)
 {
+    // Generate a random order of target indices
     for (int i = 0; i < max_targets; ++i) 
     {
         order[i] = i;
@@ -153,6 +127,7 @@ void generate_random_order(int *order, int max_targets)
 
 Target generate_target(int order, int screen_size_x, int screen_size_y)
 {
+    // Generate a target based on the order and screen dimensions
     Target target;
 
     // Sector dimensions
@@ -195,3 +170,13 @@ void make_target_msg(Target *targets, char *message)
     message[offset] = '\0'; // Null-terminate the string
     printf("%s\n", message);
 }
+
+void data_from_server_handler(char *message, int *screen_x, int *screen_y)
+{
+    float temp_scx, temp_scy;
+    sscanf(message, "I2:%f,%f", &temp_scx, &temp_scy);
+    *screen_x = (int)temp_scx;
+    *screen_y = (int)temp_scy;
+    printf("Obtained from server: %s\n", message);
+    fflush(stdout);
+} 

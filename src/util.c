@@ -83,3 +83,34 @@ void write_message_to_logger(int who, int type, char *msg)
     sem_close(sem_logs_2);
     sem_close(sem_logs_3);
 }
+
+
+int read_from_pipe(int pipe_des, char message[])
+{
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    fd_set read_pipe;
+    FD_ZERO(&read_pipe);
+    FD_SET(pipe_des, &read_pipe);
+
+    char buffer[MSG_LEN];
+    int ready = select(pipe_des + 1, &read_pipe, NULL, NULL, &timeout);
+    if (ready == -1)
+    {
+        perror("Select went wrong");
+    }
+    if (ready > 0, FD_ISSET(pipe_des, &read_pipe))
+    {
+        ssize_t bytes_read = read(pipe_des, buffer, MSG_LEN);
+        if (bytes_read > 0)
+        {
+            strcpy(message, buffer);
+            return 1;
+        }
+        else
+        {
+            return 0;
+        } 
+    }
+}

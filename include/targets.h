@@ -54,7 +54,24 @@ Target generate_target(int order, int screen_size_x, int screen_size_y);
  * @param targets pointer to an array of targets
  * @param message pointer to a character array to store the output message
  */
+
+/**
+ * make_target_msg function takes in a pointer to an array of targets and a character array as input, 
+ * and outputs a character array containing the coordinates of each target in the form of "x,y" separated by a space.
+ * 
+ * @param targets pointer to an array of targets
+ * @param message pointer to a character array to store the output message
+ */
 void make_target_msg(Target *targets, char *message);
+
+/**
+ * data_from_server_handler function takes in a message from the server and updates the screen dimensions
+ * 
+ * @param message the message from the server containing the new screen dimensions
+ * @param screen_x pointer to an integer to store the x dimension of the screen
+ * @param screen_y pointer to an integer to store the y dimension of the screen
+ */
+void data_from_server_handler(char *message, int *screen_x, int *screen_y);
 
 
 #endif // TARGET_H

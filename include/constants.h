@@ -34,6 +34,8 @@
 // Special value to indicate no key pressed
 #define NO_KEY_PRESSED 0
 
+#define SLEEP_DELAY 100000
+
 
 // SYMBOLS FOR WATCHDOG & LOGGER
 #define SERVER_SYM 1
