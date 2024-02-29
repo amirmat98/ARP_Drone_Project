@@ -117,11 +117,15 @@ void read_and_echo(int socket_des, char socket_msg[])
         }
         else if (bytes_read == 0)
         {
-            return; // Connection closed
+            continue;; // Connection closed
         }
         else if (socket_msg[0] == '\0')
         {
-            return; // Empty message
+            continue;; // Empty message
+        }
+        if (bytes_read > 0)
+        {
+            correct_bytes_read = 1;
         }
     }
 
