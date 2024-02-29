@@ -33,7 +33,6 @@ char msg[1024];
 
 int main(int argc, char *argv[])
 {
-
     // Create Log File
     create_logfile();
     log_msg(log_file_path, "MAIN", "All processes created");
@@ -220,9 +219,10 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
     if (signo == SIGINT)
     {
         sprintf(msg, "Caught SIGINT, killing all children... \n");
-        printf("%s", msg);
+        printf("\n%s", msg);
         log_msg(log_file_path, "MAIN", msg);
 
+        
         kill(server_pid, SIGKILL);
         kill(window_pid, SIGKILL);
         kill(km_pid, SIGKILL);
@@ -231,6 +231,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
         kill(logger_pid, SIGKILL);
         kill(targets_pid, SIGKILL);
         kill(obstacles_pid, SIGKILL);
+        
 
         sprintf(msg, "Closing all pipes.. \n");
         printf("%s", msg);
@@ -255,6 +256,7 @@ int create_child(const char *program, char **arg_list)
     {   
         // This is where child goes
         execvp(program, arg_list);
+        exit(0);
     }
     else
     {

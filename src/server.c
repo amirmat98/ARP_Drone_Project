@@ -407,6 +407,26 @@ void clean_up()
     // unlink shared memories
     shm_unlink(SHAREMEMORY_WD);
 
+    // Close
+    close(km_server[0]);
+    close(km_server[1]);
+    close(server_drone[0]);
+    close(server_drone[1]);
+    close(interface_server[0]);
+    close(interface_server[1]);
+    close(drone_server[0]);
+    close(drone_server[1]);
+    close(server_interface[0]);
+    close(server_interface[1]);
+    close(server_obstacles[0]);
+    close(server_obstacles[1]);
+    close(obstacles_server[0]);
+    close(obstacles_server[1]);
+    close(server_targets[0]);
+    close(server_targets[1]);
+    close(targets_server[0]);
+    close(targets_server[1]);
+
     // close all sockets
     close_sockets();
 
