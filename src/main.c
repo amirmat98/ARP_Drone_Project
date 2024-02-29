@@ -24,6 +24,7 @@ pid_t wd_pid;
 pid_t logger_pid;
 pid_t targets_pid;
 pid_t obstacles_pid;
+pid_t all_pids[9];
 
 FILE *log_file;
 char log_file_path[80];
@@ -136,15 +137,17 @@ int main(int argc, char *argv[])
     int number_process = 0; //number of processes
 
     /* Server  */
-    // char *server_args[] = {"konsole", "-e", "./build/server", server_fds, NULL};
-    char *server_args[] = {"./build/server", server_fds, NULL};
+    char *server_args[] = {"konsole", "-e", "./build/server", server_fds, NULL};
+    // char *server_args[] = {"./build/server", server_fds, NULL};
     server_pid = create_child(server_args[0], server_args);
+    all_pids[number_process] = server_pid;
     number_process++;
     usleep(delay * 10); // little bit more time for server
 
     /* Window - Interface */
     char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL};
     window_pid = create_child(window_args[0], window_args);
+    all_pids[number_process] = window_pid;
     number_process++;
     usleep(delay);
 
@@ -152,6 +155,7 @@ int main(int argc, char *argv[])
     // char *targets_args[] = {"konsole", "-e", "./build/targets", targets_fds, NULL};
     char *targets_args[] = {"./build/targets", targets_fds, NULL};
     targets_pid = create_child(targets_args[0], targets_args);
+    all_pids[number_process] = targets_pid;
     number_process++;
     usleep(delay);
 
@@ -159,6 +163,7 @@ int main(int argc, char *argv[])
     // char *obstacles_args[] = {"konsole", "-e", "./build/obstacles", obstacles_fds, NULL};
     char *obstacles_args[] = {"./build/obstacles", obstacles_fds, NULL};
     obstacles_pid = create_child(obstacles_args[0], obstacles_args);
+    all_pids[number_process] = obstacles_pid;
     number_process++;
     usleep(delay);
 
@@ -166,13 +171,15 @@ int main(int argc, char *argv[])
     // char *km_args[] = {"konsole", "-e", "./build/key_manager", key_manager_fds, NULL};
     char *km_args[] = {"./build/key_manager", key_manager_fds, NULL};
     km_pid = create_child(km_args[0], km_args);
+    all_pids[number_process] = km_pid;
     number_process++;
     usleep(delay);
 
     /* Drone */
-    // char *drone_args[] = {"konsole", "-e", "./build/drone", drone_fds, NULL};
-    char *drone_args[] = {"./build/drone", drone_fds, NULL};
+    char *drone_args[] = {"konsole", "-e", "./build/drone", drone_fds, NULL};
+    // char *drone_args[] = {"./build/drone", drone_fds, NULL};
     drone_pid = create_child(drone_args[0], drone_args);
+    all_pids[number_process] = drone_pid;
     number_process++;
     usleep(delay);
 
@@ -180,6 +187,7 @@ int main(int argc, char *argv[])
     // char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL};
     char *wd_args[] = {"./build/watchdog", log_file_path, NULL};
     wd_pid = create_child(wd_args[0], wd_args);
+    all_pids[number_process] = wd_pid;
     number_process++;
     
 

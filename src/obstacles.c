@@ -216,7 +216,7 @@ void print_obstacles(Obstacle obstacles[], int number_obstacles, char obstacles_
             sprintf(obstacles_msg + strlen(obstacles_msg), "|");
         }
     }
-    printf("%s\n", obstacles_msg);
+    // printf("%s\n", obstacles_msg);
     sprintf(msg, "Generated Obstacles - %s\n", obstacles_msg);
     log_msg(log_file, OBS, msg);
     fflush(stdout);

@@ -25,13 +25,13 @@ int main(int argc, char *argv[])
     read_args_from_file(CONFIG_PATH, program_type, socket_data);
     char host_name[MSG_LEN];
     int port_num;
-    printf("Program type: %s\n", program_type);
+    // printf("Program type: %s\n", program_type);
     sprintf(msg, "Program type: %s\n", program_type);
     log_msg(log_file, TARGETS, msg);
 
     parse_host_port(socket_data, host_name, &port_num);
-    printf("Host name: %s\n", host_name);
-    printf("Port number: %d\n", port_num);
+    // printf("Host name: %s\n", host_name);
+    // printf("Port number: %d\n", port_num);
     sprintf(msg, "Host name: %s\n", host_name);
     log_msg(log_file, TARGETS, msg);
     sprintf(msg, "Port number: %d\n", port_num);
@@ -287,7 +287,7 @@ void make_target_msg(Target *targets, char *message)
         }
     }
     message[offset] = '\0'; // Null-terminate the string
-    printf("%s\n", message);
+    // printf("%s\n", message);
 }
 
 void clean_up()

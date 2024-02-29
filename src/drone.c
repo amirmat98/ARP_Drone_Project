@@ -194,14 +194,20 @@ int main(int argc, char *argv[])
             // Only print the positions when there is still velocity present.
             if(fabs(v_x) > FLOAT_TOLERANCE || fabs(v_y) > FLOAT_TOLERANCE)
             {
-                sprintf(msg, "Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
-                log_msg(log_file, DRONE, msg);
-                sprintf(msg, "External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
-                log_msg(log_file, DRONE, msg);
-                sprintf(msg, "X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
-                log_msg(log_file, DRONE, msg);
-                sprintf(msg, "Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
-                log_msg(log_file, DRONE, msg);
+                printf("Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
+                printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
+                printf("X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
+                printf("Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
+
+
+                // sprintf(msg, "Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
+                // log_msg(log_file, DRONE, msg);
+                // sprintf(msg, "External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
+                // log_msg(log_file, DRONE, msg);
+                // sprintf(msg, "X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
+                // log_msg(log_file, DRONE, msg);
+                // sprintf(msg, "Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
+                //log_msg(log_file, DRONE, msg);
             }
             int x_f = (int)round(pos_x);
             int y_f = (int)round(pos_y);
