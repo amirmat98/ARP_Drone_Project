@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 
     while(1)
     {
-        if (strcmp(mode, "standalone") == 0)
+        if (strcmp(mode, "autonomous") == 0)
         {
             // increment counter
             cnt_server++;

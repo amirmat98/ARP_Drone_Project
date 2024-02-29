@@ -1,16 +1,14 @@
-# Write in the following format (TYPE IP:PORT)
-
-# TYPES
-# server: This machine will wait for another to sent targets/obstacles data
-# client: Our targets/obstacles processes will send to another machine their data.
-# standalone: Game is played entirely on local machine.
-
-# IP:PORT (i.e 192.168.1.20:2000)
-# For server write any IP and a port
-# For client write the IP of the remote machine and its port
-# For standalone write localhost and a port
-
-standalone localhost:2000
+# Please write in the format that is described below: (TYPE IP:PORT)
 
 
+# How to configure the TYPES
+# server: The data on targets and obstacles will be sent by another computer, and this machine will wait.
+# client: The data that our targets and obstacles procedures generate will be transmitted to another machine.
+# autonomous: On the local machine, the game is played in its entirety.
 
+# IP:PORT
+# Write any IP address and a port for the server. (server 192.168.1.20:2000)
+# For the client, note down the Internet Protocol address of the distant system as well as its port. (client 192.168.1.20:2000)
+# For autonomous write localhost and a port (autonomous localhost:2000)
+
+autonomous localhost:2000
