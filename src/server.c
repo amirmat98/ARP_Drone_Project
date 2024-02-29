@@ -35,6 +35,7 @@ char msg[1024];
 int main(int argc, char *argv[])
 {
 
+    close_sockets();
     // clean_up();
     
     // Read the file descriptors from the arguments
@@ -407,11 +408,16 @@ void clean_up()
     shm_unlink(SHAREMEMORY_WD);
 
     // close all sockets
+    close_sockets();
+
+    sprintf(msg, "Clean up has been performed succesfully\n");
+    log_msg(log_file, SERVER, msg);
+}
+
+void close_sockets()
+{
     close(socket_fd);
     close(obstacles_socket);
     close(targets_socket);
     close(new_socket_fd);
-
-    sprintf(msg, "Clean up has been performed succesfully\n");
-    log_msg(log_file, SERVER, msg);
 }
