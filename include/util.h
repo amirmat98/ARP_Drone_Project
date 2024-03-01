@@ -12,8 +12,6 @@ void publish_pid_to_wd(int process_symbol, pid_t pid);
 
 void write_to_pipe(int pipe_des, char message[]);
 
-// void write_message_to_logger(int who, int type, char *msg);
-
 int read_pipe_non_blocking(int pipe_des, char message[]);
 
 void read_and_echo(int socket_des, char socket_msg[]);

@@ -279,7 +279,7 @@ int read_pipe_non_blocking(int pipe_des, char message[])
 
     block_signal(SIGUSR1);
     int ready = select(pipe_des + 1, &read_pipe, NULL, NULL, &timeout);
-    block_signal(SIGUSR1);
+    unblock_signal(SIGUSR1);
     if (ready == -1)
     {
         perror("Error in select");
