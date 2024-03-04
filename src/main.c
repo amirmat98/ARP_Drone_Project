@@ -175,8 +175,8 @@ int main(int argc, char *argv[])
     usleep(delay);
 
     /* Drone */
-    char *drone_args[] = {"konsole", "-e", "./build/drone", drone_fds, NULL};
-    // char *drone_args[] = {"./build/drone", drone_fds, NULL};
+    // char *drone_args[] = {"konsole", "-e", "./build/drone", drone_fds, NULL};
+    char *drone_args[] = {"./build/drone", drone_fds, NULL};
     drone_pid = create_child(drone_args[0], drone_args);
     all_pids[number_process] = drone_pid;
     number_process++;

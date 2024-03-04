@@ -190,29 +190,9 @@ int main(int argc, char *argv[])
             double max_y = (double)screen_size_y;
             differential_equations(&pos_x, &v_x, force_x, external_force_x, &max_x);
             differential_equations(&pos_y, &v_y, force_y, external_force_y, &max_y);
-
-            // Only print the positions when there is still velocity present.
-            if(fabs(v_x) > FLOAT_TOLERANCE || fabs(v_y) > FLOAT_TOLERANCE)
-            {
-                printf("Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
-                printf("External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
-                printf("X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
-                printf("Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
-
-
-                // sprintf(msg, "Drone Force (X,Y): %.2f,%.2f\t|\t",force_x,force_y);
-                // log_msg(log_file, DRONE, msg);
-                // sprintf(msg, "External Force (X,Y): %.2f,%.2f\n",external_force_x,external_force_y);
-                // log_msg(log_file, DRONE, msg);
-                // sprintf(msg, "X - Position: %.2f / Velocity: %.2f\t|\t", pos_x, v_x);
-                // log_msg(log_file, DRONE, msg);
-                // sprintf(msg, "Y - Position: %.2f / Velocity: %.2f\n", pos_y, v_y);
-                //log_msg(log_file, DRONE, msg);
-            }
             int x_f = (int)round(pos_x);
             int y_f = (int)round(pos_y);
-
-            
+      
             //////////////////////////////////////////////////////
             /* SECTION 5: SEND THE DRONE POSITION TO SERVER */
             ///////////////////////////////////////////////////// 

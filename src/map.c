@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
     init_pair(2, COLOR_RED, COLOR_BLACK);  // Obstacles are red
     init_pair(3, COLOR_GREEN, COLOR_BLACK); // Targets are green
     init_pair(4, COLOR_YELLOW, COLOR_BLACK); // Score Text will be of color yellow
+    init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
 
     //----------------------------------------------------------------------------------------//
 
@@ -85,6 +86,7 @@ int main(int argc, char *argv[])
     char score_msg[MSG_LEN];
     int score = 0;
     int counter = 0;
+    int timer_color = 0;
 
     // Targets and obstacles
     Targets targets[80];
@@ -204,25 +206,7 @@ int main(int argc, char *argv[])
         if (targets[lowest_index].x == drone_x && targets[lowest_index].y == drone_y) 
         {
             
-            //calculate_score(counter, &score, 1);
-
-            // Update score and counter (reset timer)
-            if (counter > 1500)
-            { // 1500 * 10ms = 15 seconds
-                score += 2;
-            }
-            else if (counter > 1000)
-            { // 1000 * 10ms = 10 seconds
-                score += 4;
-            }
-            else if (counter > 500)
-            { // 500 * 10ms = 5 seconds
-                score += 6;
-            }
-            else
-            { // Les than 5 seconds
-                score += 10;
-            }
+            calculate_score(counter, &score);
 
             counter = 0;
             // Remove the target with the lowest ID
@@ -237,20 +221,24 @@ int main(int argc, char *argv[])
         }
 
         // Counter/Timer linked to score calculations
+        calculate_timer(counter, &timer_color);
         counter++;
-        usleep(10000);
+        usleep(10000); // delay in seconds 
 
         //////////////////////////////////////////////////////
         /* SECTION 4: DRAW THE WINDOW & OBTAIN INPUT*/
         /////////////////////////////////////////////////////
 
         // Create a string for the player's current score
-        sprintf(score_msg, "Your current score: %d", score);
+        sprintf(score_msg, "Score: %d", score);
         strcpy(msg, score_msg);
         log_msg(log_file, INTERFACE, msg);
 
+        char timer_msg[MSG_LEN];
+        sprintf(timer_msg, "%02d\"", (counter/10));
+        // printf("%s\n", timer_msg);
         // Draws the window with the updated information of the terminal size, drone, targets, obstacles and score.
-        draw_window(drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg);
+        draw_window(drone_x, drone_y, targets, number_targets, obstacles, number_obstacles, score_msg, timer_msg, timer_color);
 
         //////////////////////////////////////////////////////
         /* SECTION 5: HANDLE THE KEY PRESSED BY USER */
@@ -305,7 +293,7 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 
 // Function to draw the regular game window
 void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets, 
-                    Obstacles *obstacles, int number_obstacles, const char *score_msg)
+                    Obstacles *obstacles, int number_obstacles, const char *score_msg, const char *timer_msg, int timer_color)
 {
     // Clear the screen
     clear();
@@ -316,11 +304,46 @@ void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets,
 
     // Draw border on the screen
     box(stdscr, 0, 0);
+
+    // Print Timer
+    if (timer_color == 3)
+    {
+        attron(COLOR_PAIR(3));
+        mvprintw(0, (max_x/4) - 5, "%s", timer_msg);
+        attroff(COLOR_PAIR(3));
+    }
+    else if (timer_color == 4)
+    {
+        attron(COLOR_PAIR(4));
+        mvprintw(0, (max_x/4) - 5, "%s", timer_msg);
+        attroff(COLOR_PAIR(4));
+    }
+    else if (timer_color == 5)
+    {
+        attron(COLOR_PAIR(5));
+        mvprintw(0, (max_x/4) - 5, "%s", timer_msg);
+        attroff(COLOR_PAIR(5));
+    }
+    else if (timer_color == 2)
+    {
+        attron(COLOR_PAIR(2));
+        mvprintw(0, (max_x/4) - 5, "%s", timer_msg);
+        attroff(COLOR_PAIR(2));
+    }
+
     // Print a title in the top center part of the window
-    mvprintw(0, (max_x - 11) / 2, "%s", score_msg);
+    mvprintw(0, (max_x - strlen(score_msg)) / 2, "%s", score_msg);
+
+    // Print the cordination of Drone
+    int new_x, new_y;
+    convert_interface_cordination_to_standard(drone_x, drone_y, &new_x, &new_y);
+    char temp_drone_msg[MSG_LEN];
+    sprintf(temp_drone_msg, "Drone: X: %d, Y: %d", new_x, new_y);
+    mvprintw(max_y - 1, (max_x - strlen(temp_drone_msg)) / 2, "%s", temp_drone_msg);
 
     // Draw a plus sign to represent the drone
     mvaddch(drone_y, drone_x, '+' | COLOR_PAIR(1));
+
 
     // Draw  targets and obstacles on the board
     for (int i = 0; i<number_obstacles; i++)
@@ -432,31 +455,52 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
 }
 
 
-void calculate_score(int counter, int *score, int operator)
+void calculate_score(int counter, int *score)
 {
-    if (operator == 1)
-    {
+    // Update score and counter (reset timer)
+    if (counter > 1500) 
+    {  // 1500 * 10ms = 15 seconds 
+        *score += 2;
+    }
+    else if (counter > 1000) 
+    {   // 1000 * 10ms = 10 seconds
+        *score += 4;
+    }
+    else if (counter > 500) 
+    {   // 500 * 10ms = 5 seconds 
+        *score += 6;
+    }
+    else 
+    {  // Les than 5 seconds
+        *score += 10;
+    }
+}
+
+void calculate_timer(int counter, int *timer_color)
+{
         // Update score and counter (reset timer)
-        if (counter > 1500) 
-        {  // 1500 * 10ms = 15 seconds 
-            score += 2;
-        }
-        else if (counter > 1000) 
-        {   // 1000 * 10ms = 10 seconds
-                score += 4;
-        }
-        else if (counter > 500) 
-        {   // 500 * 10ms = 5 seconds 
-                score += 6;
-        }
-        else 
-        {  // Les than 5 seconds
-                score += 10;
-        }
+    if (counter > 400) 
+    {  // 1500 * 10ms = 15 seconds 
+        *timer_color = 2;
     }
-    else if (operator == 0)
-    {
-        // Update score
-        score -= 5;
+    else if (counter > 250) 
+    {   // 1000 * 10ms = 10 seconds
+        *timer_color = 5;
     }
+    else if (counter > 150) 
+    {   // 500 * 10ms = 5 seconds 
+        *timer_color = 4;
+    }
+    else 
+    {  // Les than 5 seconds
+        *timer_color = 3;
+    }
+}
+
+void convert_interface_cordination_to_standard(int x, int y, int *new_x, int *new_y)
+{
+    int max_x, max_y;
+    getmaxyx(stdscr, max_y, max_x);
+    *new_x = x - (max_x / 2);
+    *new_y = (max_y / 2) - y;
 }

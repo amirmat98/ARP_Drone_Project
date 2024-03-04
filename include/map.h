@@ -19,11 +19,15 @@ int check_collision_drone_obstacle (Obstacles obstacles[], int number_obstacles,
 
 void parse_obstacles_message(char *obstacles_msg, Obstacles *obstacles, int *number_obstacles);
 
-void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets, Obstacles *obstacles, int number_obstacles, const char *score_msg);
+void draw_window(int drone_x, int drone_y, Targets *targets, int number_targets, Obstacles *obstacles, int number_obstacles, const char *score_msg, const char *timer_msg, int timer_color);
 
 void draw_final_window(int score);
 
-void calculate_score(int counter, int *score, int operator);
+void calculate_score(int counter, int *score);
+
+void calculate_timer(int counter, int *timer_color);
+
+void convert_interface_cordination_to_standard(int x, int y, int *new_x, int *new_y);
 
 
 #endif //MAP_H
