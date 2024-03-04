@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
     usleep(delay * 10); // little bit more time for server
 
     /* Window - Interface */
-    char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL};
+    char *window_args[] = {"konsole", "-e", "./build/map", interface_fds, NULL};
     window_pid = create_child(window_args[0], window_args);
     all_pids[number_process] = window_pid;
     number_process++;

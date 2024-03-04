@@ -8,7 +8,7 @@ UTIL_OBJ = $(BUILDDIR)/util.o
 
 
 # Default target
-all: $(BUILDDIR) util wd server km drone interface main targets obstacles
+all: $(BUILDDIR) util wd server km drone map main targets obstacles
 
 # create build directory and logs
 $(BUILDDIR):
@@ -22,7 +22,7 @@ run:
 clean:
 	rm -f $(BUILDDIR)/main
 	rm -f $(BUILDDIR)/server
-	rm -f $(BUILDDIR)/interface
+	rm -f $(BUILDDIR)/map
 	rm -f $(BUILDDIR)/key_manager
 	rm -f $(BUILDDIR)/drone
 	rm -f $(BUILDDIR)/watchdog
@@ -39,8 +39,8 @@ main:
 	gcc -I include -o $(BUILDDIR)/main $(UTIL_OBJ) $(SRCDIR)/main.c
 server:
 	gcc -I include -o $(BUILDDIR)/server $(UTIL_OBJ) $(SRCDIR)/server.c -pthread
-interface:
-	gcc -I include -o $(BUILDDIR)/interface $(UTIL_OBJ) $(SRCDIR)/interface.c -lncurses -pthread
+map:
+	gcc -I include -o $(BUILDDIR)/map $(UTIL_OBJ) $(SRCDIR)/map.c -lncurses -pthread
 km:
 	gcc -I include -o $(BUILDDIR)/key_manager $(UTIL_OBJ) $(SRCDIR)/key_manager.c -pthread
 targets:

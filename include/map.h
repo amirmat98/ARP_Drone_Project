@@ -1,5 +1,5 @@
-#ifndef INTERFACE_H
-#define INTERFACE_H   
+#ifndef MAP_H
+#define MAP_H
 
 #include <semaphore.h>
 #include <signal.h>
@@ -26,4 +26,4 @@ void draw_final_window(int score);
 void calculate_score(int counter, int *score, int operator);
 
 
-#endif //INTERFACE_H
+#endif //MAP_H

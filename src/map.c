@@ -1,4 +1,4 @@
-#include "interface.h"
+#include "map.h"
 #include "import.h"
 #include <ncurses.h>
 

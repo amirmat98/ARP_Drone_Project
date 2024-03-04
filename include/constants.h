@@ -7,8 +7,12 @@
 // Pipes Constants
 #define MSG_LEN 256
 
+// Socket Constants
+#define MSG_BUF_LEN 1024
+
 // Length for logfiles
 #define LOG_LEN 256
+#define LOG_FILE_LEN 80
 
 // Shared memory for Watchdog's pid
 #define SHAREMEMORY_WD "/wd_pid_1"

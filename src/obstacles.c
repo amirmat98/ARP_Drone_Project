@@ -1,13 +1,11 @@
 #include "obstacles.h"
 #include "import.h"
 
-
-// Pipes working with the server
+// Global variables
 int server_obstacles[2];
 int obstacles_server[2];
-
-char log_file[80];
-char msg[1024];
+char log_file[LOG_FILE_LEN];
+char msg[MSG_BUF_LEN];
 
 
 int main(int argc, char *argv[])
@@ -15,61 +13,63 @@ int main(int argc, char *argv[])
     // Read the file descriptors from the arguments
     get_args(argc, argv);
 
+    // Delay the start of the process
     sleep(1);
 
     // Set Configuration
+    // Read the configuration file
     char program_type[MSG_LEN];
     char socket_data[MSG_LEN];
-    read_args_from_file(CONFIG_PATH, program_type, socket_data);
     char host_name[MSG_LEN];
     int port_num;
-    // printf("Program type: %s\n", program_type);
-    sprintf(msg, "Program type: %s\n", program_type);
-    log_msg(log_file, OBS, msg);
-
+    read_args_from_file(CONFIG_PATH, program_type, socket_data);
     parse_host_port(socket_data, host_name, &port_num);
+
+    // printf("Program type: %s\n", program_type);
     // printf("Host name: %s\n", host_name);
     // printf("Port number: %d\n", port_num);
-
+    sprintf(msg, "Program type: %s\n", program_type);
+    log_msg(log_file, OBS, msg);
     sprintf(msg, "Host name: %s\n", host_name);
     log_msg(log_file, OBS, msg);
-
     sprintf(msg, "Port number: %d\n", port_num);
     log_msg(log_file, OBS, msg);
 
+    // Check the program type is server or client
     if (strcmp(program_type, "server") == 0)
     {
-        sprintf(msg, "Server mode - exiting process");
+        sprintf(msg, "Server mode is running");
         log_msg(log_file, OBS, msg);
         exit(0);
     }
 
-    // Signals
+    /**************************************************************************/
+
+    // Signals that the program is running successfully or failed
     struct sigaction sa;
     sa.sa_sigaction = signal_handler; 
     sa.sa_flags = SA_SIGINFO;
     sigaction (SIGINT, &sa, NULL);
-    sigaction (SIGUSR1, &sa, NULL);   
+    sigaction (SIGUSR1, &sa, NULL);
+    // send pid to the watchdog
     publish_pid_to_wd(OBSTACLES_SYM, getpid());
+
+    /**************************************************************************/
 
     // Seed random number generator with current time
     srand(time(NULL));
 
-    Obstacle obstacles[MAX_OBSTACLES];
-    int number_obstacles = 0;
-    char obstacles_msg[MSG_LEN]; // Adjust the size based on your requirements
-
-    // To compare previous values
-    bool obtained_dimensions = false;
-
-
     // Variables
-    int screen_size_x; 
-    int screen_size_y;
+    int screen_size_x; // Width of the screen in pixels
+    int screen_size_y; // Height of the screen in pixels
+    Obstacle obstacles[MAX_OBSTACLES]; // Array of obstacles
+    int number_obstacles = 0; // Number of obstacles
+    char obstacles_msg[MSG_LEN]; // Adjust the size based on your requirements
+    bool obtained_dimensions = false; // To compare previous values
 
-    //////////////////////////////////////////////////////
+    /****************************************************/
     /* SOCKET INITIALIZATION */
-    /////////////////////////////////////////////////////
+    /****************************************************/
 
     int socket_fd;
     int prot_number;
@@ -128,25 +128,11 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        //////////////////////////////////////////////////////
         /* Step 1: READ THE DATA FROM SERVER */
-        /////////////////////////////////////////////////////
-
+        
         char socket_msg[MSG_LEN]; // Adjust the size based on your requirements
         read_and_echo_non_blocking(socket_fd, socket_msg, log_file, OBS);
-        
-        if (strcmp(socket_msg, "STOP") == 0)
-        {
-            // printf("STOP RECEIVED FROM SERVER!\n");
-            // printf("This process will close in 5 seconds...\n");
-            sprintf(msg,"STOP RECEIVED FROM SERVER!");
-            log_msg(log_file, OBS, msg);
-            sprintf(msg,"This process will close in 5 seconds...");
-            log_msg(log_file, OBS, msg);
-            fflush(stdout);
-            sleep(5);
-            exit(0);
-        }
+        stop_message_handler(socket_msg);
 
         //////////////////////////////////////////////////////
         /* Step 2: OBSTACLES GENERATION & SEND DATA */
@@ -258,5 +244,19 @@ void check_obstacles_spawn_time(Obstacle obstacles[], int number_obstacles, int 
             // Replace the obstacle with a new one
             obstacles[i] = generate_obstacle(x, y);
         }
+    }
+}
+
+void stop_message_handler(char *message)
+{
+    if (strcmp(message, "STOP") == 0)
+    {
+            sprintf(msg,"STOP RECEIVED FROM SERVER!");
+            log_msg(log_file, OBS, msg);
+            sprintf(msg,"This process will close in 5 seconds...");
+            log_msg(log_file, OBS, msg);
+            fflush(stdout);
+            sleep(5);
+            exit(0);
     }
 }
