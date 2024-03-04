@@ -72,7 +72,7 @@ An update to the calculation of the score will be made in real time. It is possi
 
 After all of the objectives have been accomplished, the game will restart, and the player will be given a fresh set of objectives to complete.
 
-![Diagram of the design of the architecture of the game](http://)
+![Diagram of the design of the architecture of the game](https://raw.githubusercontent.com/amirmat98/ARP_Drone_Project/Assignment-3/ARP-Design.jpg)
 
 A sketch is used to show the organizational structure of the project. A number of components make up the architecture, which includes the Main, the Server, the Window (which represents the user interface), the Keyboard Manager, the Drone, the Targets, the Obstacles, and the Watchdog. Within the context of the project's overall functioning, each component fulfills a distinct function.
 
