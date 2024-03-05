@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef UTILITY_H
+#define UTILITY_H
 
 #include <sys/types.h>
 
@@ -31,4 +31,4 @@ void unblock_signal(int signal);
 void get_clock_time(int *hour, int *min, int *sec);
 
 
-#endif // UTIL_H
+#endif // UTILITY_H

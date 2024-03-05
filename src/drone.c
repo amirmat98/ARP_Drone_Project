@@ -146,6 +146,11 @@ int main(int argc, char *argv[])
             {
                 force_x = 0.0; 
                 force_y = 0.0;
+                if (action_x == 50.0 && action_y == 50.0)
+                {
+                    v_x = 0.0;
+                    v_y = 0.0;
+                }
             }
 
             /* EXTERNAL FORCE from obstacles and targets */

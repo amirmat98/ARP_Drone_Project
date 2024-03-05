@@ -2,7 +2,7 @@
 #define IMPORT_H
 
 // My <.h> files
-#include "util.h"
+#include "utility.h"
 #include "constants.h"
 
 // Necessary to import all files

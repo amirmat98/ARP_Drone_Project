@@ -105,8 +105,9 @@ char* determine_action(char pressed_key)
         case 'E': return "1,-1";
         case 'Z': return "-1,1";
         case 'C': return "1,1";
-        case 'S': return "10,0"; // Special value interpreted by drone.c process
-        case 'P': return "STOP"; // Special value interpreted by server.c process
+        case 'H': return "50,50";
+        case 'S': return "10,0"; 
+        case 'P': return "STOP"; 
         default: return "None"; // If norecognized key, return "None" indicating no action
     }
 }

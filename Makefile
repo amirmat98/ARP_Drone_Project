@@ -4,11 +4,10 @@ BUILDDIR = ./build
 LOGDIR = logs
 
 # UTILOBJ
-UTIL_OBJ = $(BUILDDIR)/util.o
-
+UTIL_OBJ = $(BUILDDIR)/utility.o
 
 # Default target
-all: $(BUILDDIR) util wd server km drone map main targets obstacles
+all: $(BUILDDIR) utility wd server km drone map main targets obstacles
 
 # create build directory and logs
 $(BUILDDIR):
@@ -28,8 +27,8 @@ clean:
 	rm -f $(BUILDDIR)/watchdog
 	rm -f $(BUILDDIR)/obstacles
 	rm -f $(BUILDDIR)/targets
-	rm -f $(BUILDDIR)/util
-	rm -f $(BUILDDIR)/util.o
+	rm -f $(BUILDDIR)/utility
+	rm -f $(BUILDDIR)/utility.o
 	rm -f $(BUILDDIR)/$(LOGDIR)/*
 
 	
@@ -49,5 +48,5 @@ obstacles:
 	gcc -I include -o $(BUILDDIR)/obstacles $(UTIL_OBJ) $(SRCDIR)/obstacles.c
 wd:
 	gcc -I include -o $(BUILDDIR)/watchdog $(UTIL_OBJ) $(SRCDIR)/watchdog.c
-util:
-	gcc -I include -o $(BUILDDIR)/util.o  -c $(SRCDIR)/util.c
+utility:
+	gcc -I include -o $(BUILDDIR)/utility.o  -c $(SRCDIR)/utility.c
