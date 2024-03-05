@@ -42,7 +42,7 @@ To halt all forces on the drone, the `s` key, which is located in the center of 
 
 ## Overview 
 
-[//]: <> ("Add Picture")
+![Sketch of the architecture of the program](https://raw.githubusercontent.com/amirmat98/ARP_Drone_Project/Improve-Assignment-2/ARP-Design-A2.jpg)
 
 A sketch is used to show the organizational structure of the project. A number of components make up the architecture, which includes the Main, the Server, the Window (which represents the user interface), the Keyboard Manager, the Drone, the Targets, the Obstacles, the Watchdog, and the Logger. Within the context of the project's overall functioning, each component fulfills a distinct function.
 
