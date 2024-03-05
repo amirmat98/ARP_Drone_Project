@@ -22,7 +22,4 @@ int get_pids(pid_t *server_pid, pid_t *window_pid, pid_t *km_pid,
 */
 void send_sigint_to_all();
 
-// Monitor health by sending sigusr2 to all processes
-void send_signals();
-
 #endif //WATCHDOG_H

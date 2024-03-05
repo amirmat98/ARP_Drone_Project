@@ -28,5 +28,7 @@ void block_signal(int signal);
 
 void unblock_signal(int signal);
 
+void get_clock_time(int *hour, int *min, int *sec);
+
 
 #endif // UTIL_H

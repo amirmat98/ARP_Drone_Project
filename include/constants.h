@@ -30,6 +30,9 @@
 // Special value to indicate no key pressed
 #define NO_KEY_PRESSED 0
 
+// Define Genral Delay
+#define GENERAL_DELAY 1000000
+
 // SYMBOLS FOR WATCHDOG
 #define SERVER_SYM 1
 #define WINDOW_SYM 2

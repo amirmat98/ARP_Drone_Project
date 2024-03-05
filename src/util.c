@@ -41,12 +41,10 @@ void log_msg(char *file_path, char* who, char *message)
     }
     
     // Get the current time
-    time_t currentTime;
-    time(&currentTime);
-    struct tm *localTime = localtime(&currentTime);
-    int hours = localTime->tm_hour;
-    int minutes = localTime->tm_min;
-    int seconds = localTime->tm_sec;
+    int hours;
+    int minutes;
+    int seconds;
+    get_clock_time(&hours, &minutes, &seconds);
     
     char time[80];
     char *eol = "\n";
@@ -69,12 +67,10 @@ void log_err(char *file_path, char* who, char *message)
     }
     
     // Get the current time
-    time_t currentTime;
-    time(&currentTime);
-    struct tm *localTime = localtime(&currentTime);
-    int hours = localTime->tm_hour;
-    int minutes = localTime->tm_min;
-    int seconds = localTime->tm_sec;
+    int hours;
+    int minutes;
+    int seconds;
+    get_clock_time(&hours, &minutes, &seconds);
     
     char time[80];
     char *eol = "\n";
@@ -375,4 +371,15 @@ void unblock_signal(int signal)
     sigaddset(&sigset, signal);
     // Remove the signals in the set from the process' blocked signals
     sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+}
+
+void get_clock_time(int *hour, int *min, int *sec)
+{
+    // Get the current time
+    time_t currentTime;
+    time(&currentTime);
+    struct tm *localTime = localtime(&currentTime);
+    *hour = localTime->tm_hour;
+    *min = localTime->tm_min;
+    *sec = localTime->tm_sec;
 }

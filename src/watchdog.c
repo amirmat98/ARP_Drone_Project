@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
                 send_sigint_to_all();
             }
         }
-        usleep(1000000);
+        usleep(GENERAL_DELAY);
     }
 
     return 0;
