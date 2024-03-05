@@ -27,5 +27,7 @@ void parse_obstacles_msg(char *obstacles_msg, Obstacles *obstacles, int *number_
 
 void differential_equations(double *position, double *velocity, double force, double external_force, double *max_pos);
 
+void boundrey_check_handler(double *x, double *y, double condition);
+
 
 #endif //DRONE_H

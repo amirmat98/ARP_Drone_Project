@@ -59,6 +59,12 @@
 
 #define SIZE_SHM 4096 // General size of Shared memory (in bytes)
 
+// User-defined parameters
+#define MAX_OBSTACLES 5
+#define MIN_SPAWN_TIME 10
+#define MAX_SPAWN_TIME 15
+#define WAIT_TIME 1 // How often a new obstacle is created (if < MAX_OBSTACLES)
+
 // Struct to save obstacle's data
 typedef struct {
     int total;

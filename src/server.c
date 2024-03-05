@@ -285,6 +285,7 @@ int main(int argc, char *argv[])
             // Only send to drone when data has changed
             if (strcmp(drone_msg, prev_drone_msg) != 0) 
             {
+                printf("[PIPE] Received from drone.c: %s\n", drone_msg);
                 sprintf(msg, "[PIPE] Received from drone.c: %s\n", drone_msg);
                 log_msg(log_file, SERVER, msg);
                 fflush(stdout);

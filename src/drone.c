@@ -1,15 +1,12 @@
 #include "drone.h"
 #include "import.h"
 
-// Serverless pipes
 int interface_drone[2];
-
-// Pipes working with the server
 int server_drone[2];
 int drone_server[2];
 
-char log_file[80];
-char msg[1024];
+char log_file[LOG_FILE_LEN];
+char msg[MSG_BUF_LEN];
 
 
 int main(int argc, char *argv[])
@@ -31,35 +28,35 @@ int main(int argc, char *argv[])
     int screen_size_x; int screen_size_y;
     int action_x; int action_y;    
     int target_x; int target_y;
-    int valid_target;
 
-
-    // Variables for differential_equations
-    double pos_x;
-    double v_x = 0.0;    // Initial velocity of x
+    // Drone Vareables
+    double position_x;
+    double velocity_x = 0.0;    // Initial velocity of x
     double force_x = 0; // Applied force in the x direction
     double external_force_x = 0; // Initial external force
 
-    double pos_y;
-    double v_y = 0.0;    // Initial velocity of y
+    double position_y;
+    double velocity_y = 0.0;    // Initial velocity of y
     double force_y = 0; // Applied force in the y direction
     double external_force_y = 0; // Initial external force
 
-    int obtained_obstacles = 0;
-    Obstacles obstacles[80];
+    
+    Obstacles obstacles[MAX_OBSTACLES];
     int number_obstacles;
     
     bool euler_method_flag = true; // For testing purposes.
+    int valid_target;
+    int obtained_obstacles = 0;
+
+    //-----------------------------------------------------------------------------------------//
 
 
     // Simulate the motion in an infinite loop using Differential Equations
     while (1)
     {
 
-        //////////////////////////////////////////////////////
-        /* SECTION 1: READ DATA FROM SERVER */
-        /////////////////////////////////////////////////////
-        
+        /* Step 1: READ DATA FROM SERVER */
+          
         char server_msg[MSG_LEN];
 
         if (read_pipe_non_blocking(server_drone[0], server_msg) == 1)
@@ -75,42 +72,35 @@ int main(int argc, char *argv[])
                     sscanf(server_msg, "I1:%d,%d,%d,%d", &x, &y, &screen_size_x, &screen_size_y);
                     sprintf(msg, "Obtained initial parameters from server: %s\n", server_msg);
                     log_msg(log_file, DRONE, msg);
-                    pos_x = (double)x;
-                    pos_y = (double)y;
+                    position_x = (double)x;
+                    position_y = (double)y;
                 }
                 // Message origin: Interface
                 else if(server_msg[0] == 'I' && server_msg[1] == '2')
                 {
                     sscanf(server_msg, "I2:%d,%d", &screen_size_x, &screen_size_y);
-                    // printf("Changed screen dimensions to: %s\n", server_msg);
-                    // fflush(stdout);
                 }
                 // Message origin: Obstacles
                 else if (server_msg[0 == 'O'])
                 {
-                    // printf("Obtained obstacles message: %s\n", server_msg);
                     parse_obstacles_msg(server_msg, obstacles, &number_obstacles);
                     obtained_obstacles = 1;
                 }
-            }
+        }
         else
         {
             action_x = 0;
             action_y = 0;
         }
 
-
         // If obstacles has not been obtained, continue loop.
         if (obtained_obstacles == 0)
         {
-            // parse_obstacles_msg(obstacles_msg, obstacles, &number_obstacles);
             continue;
         }
-
-        //////////////////////////////////////////////////////
-        /* SECTION 2: READ DATA FROM INTERFACE.C (SERVERLESS PIPE) */
-        /////////////////////////////////////////////////////
-
+   
+        /* Step 2: READ DATA FROM INTERFACE.C */
+        
         char interface_msg[MSG_LEN];
 
         if (read_pipe_non_blocking(interface_drone[0], interface_msg) == 1)
@@ -119,37 +109,28 @@ int main(int argc, char *argv[])
             valid_target = 1;
         }
 
-        //////////////////////////////////////////////////////
-        /* SECTION 3: OBTAIN THE FORCES EXERTED ON THE DRONE*/
-        /////////////////////////////////////////////////////  
-
+        
+        /* Step 3: OBTAIN THE FORCES EXERTED ON THE DRONE*/
+        
         if(euler_method_flag)
         {
-            /* INTERNAL FORCE from the drone itself */
             // Only values between -1 to 1 are used to move the drone
             if(action_x >= -1.0 && action_x <= 1.0)
             {
                 force_x += (double)action_x;
                 force_y += (double)action_y;
                 /* Capping to the max value of the drone's force */
-                if(force_x > F_MAX)
-                    {force_x = F_MAX;}
-                if(force_y > F_MAX)
-                    {force_y = F_MAX;}
-                if(force_x < -F_MAX)
-                    {force_x = -F_MAX;}
-                if(force_y < -F_MAX)
-                    {force_y = -F_MAX;}
+                boundrey_check_handler(&force_x, &force_y, F_MAX);
             }
-            // Other values represent STOP
+            // Other values
             else
             {
                 force_x = 0.0; 
                 force_y = 0.0;
                 if (action_x == 50.0 && action_y == 50.0)
                 {
-                    v_x = 0.0;
-                    v_y = 0.0;
+                    velocity_x = 0.0;
+                    velocity_y = 0.0;
                 }
             }
 
@@ -160,47 +141,32 @@ int main(int argc, char *argv[])
             // TARGETS
             if (valid_target == 1)
             {
-                calculate_extenal_force(pos_x, pos_y, target_x, target_y, 0.0, 0.0, &external_force_x, &external_force_y);
+                calculate_extenal_force(position_x, position_y, target_x, target_y, 0.0, 0.0, &external_force_x, &external_force_y);
             }
-
 
             // OBSTACLES
             for (int i = 0; i < number_obstacles; i++)
             {
-                calculate_extenal_force(pos_x, pos_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
+                calculate_extenal_force(position_x, position_y, 0.0, 0.0, obstacles[i].x, obstacles[i].y, &external_force_x, &external_force_y);
             }
 
-            if(external_force_x > EXT_FORCE_MAX)
-            {
-                external_force_x = EXT_FORCE_MAX;
-            }
-            if(external_force_x < -EXT_FORCE_MAX)
-            {
-                external_force_x = EXT_FORCE_MAX;
-            }
-            if(external_force_y > EXT_FORCE_MAX)
-            {
-                external_force_y = EXT_FORCE_MAX;
-            }
-            if(external_force_y < -EXT_FORCE_MAX)
-            {
-                external_force_y = EXT_FORCE_MAX;
-            }
+            boundrey_check_handler(&external_force_x, &external_force_y, EXT_FORCE_MAX);
 
-            //////////////////////////////////////////////////////
-            /* SECTION 4: CALCULATE POSITION DATA */
-            ///////////////////////////////////////////////////// 
-
+            
+            /* Step 4: CALCULATE POSITION DATA */
+            
             double max_x = (double)screen_size_x;
             double max_y = (double)screen_size_y;
-            differential_equations(&pos_x, &v_x, force_x, external_force_x, &max_x);
-            differential_equations(&pos_y, &v_y, force_y, external_force_y, &max_y);
-            int x_f = (int)round(pos_x);
-            int y_f = (int)round(pos_y);
+            differential_equations(&position_x, &velocity_x, force_x, external_force_x, &max_x);
+            differential_equations(&position_y, &velocity_y, force_y, external_force_y, &max_y);
+            int x_f = (int)round(position_x);
+            int y_f = (int)round(position_y);
+            float v_x_f = (float)velocity_x;
+            float v_y_f = (float)velocity_y;
       
-            //////////////////////////////////////////////////////
-            /* SECTION 5: SEND THE DRONE POSITION TO SERVER */
-            ///////////////////////////////////////////////////// 
+            
+            /* Step 5: SEND THE DRONE POSITION and VELOCITY TO SERVER */
+            
             char position_msg[MSG_LEN];
             sprintf(position_msg, "D:%d,%d", x_f, y_f);
             write_to_pipe(drone_server[1], position_msg);
@@ -330,4 +296,24 @@ void signal_handler(int signo, siginfo_t *siginfo, void *context)
 void get_args(int argc, char *argv[])
 {
     sscanf(argv[1], "%d %d %d %s", &server_drone[0], &drone_server[1], &interface_drone[0], log_file);
+}
+
+void boundrey_check_handler(double *x, double *y, double condition)
+{
+    if (*x > condition)
+    {
+        *x = condition;
+    }
+    if (*x < -condition)
+    {
+        *x = -condition;
+    }
+    if (*y > condition)
+    {
+        *y = condition;
+    }
+    if (*y < -condition)
+    {
+        *y = -condition;
+    }
 }

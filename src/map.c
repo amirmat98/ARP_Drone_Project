@@ -64,6 +64,8 @@ int main(int argc, char *argv[])
      // Initial drone position will be the middle of the screen.
     int drone_x = screen_size_x / 2;
     int drone_y = screen_size_y / 2;
+    float velocity_x = 0;
+    float velocity_y = 0;
 
     // Write the initial position and screen size data into the server
     char initial_msg[MSG_LEN];
@@ -148,10 +150,7 @@ int main(int argc, char *argv[])
         
         char server_msg[MSG_LEN];
 
-        
-
         ssize_t bytes_read_drone = read(server_interface[0], server_msg, MSG_LEN);
-    
 
         if (bytes_read_drone > 0) 
         {
