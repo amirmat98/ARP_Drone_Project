@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     double external_force_y = 0; // Initial external force
 
     
-    Obstacles obstacles[MAX_OBSTACLES];
+    Obstacles obstacles[80];
     int number_obstacles;
     
     bool euler_method_flag = true; // For testing purposes.

@@ -35,7 +35,7 @@ char msg[1024];
 int main(int argc, char *argv[])
 {
 
-    close_sockets();
+    // close_sockets();
     // clean_up();
     
     // Read the file descriptors from the arguments
@@ -61,10 +61,12 @@ int main(int argc, char *argv[])
     sprintf(msg, "Port number: %d\n", port_num);
     log_msg(log_file, SERVER, msg);
 
+    /*
     if (strcmp(program_type, "server") == 0)
     {
         exit(0);
     }
+    */
 
     // Signals
     struct sigaction sa;
@@ -176,6 +178,7 @@ int main(int argc, char *argv[])
 
         char socket_msg[MSG_LEN];
         read_and_echo(new_socket_fd, socket_msg);
+        printf("%s\n", socket_msg);
         log_msg(log_file, "SOCKET", socket_msg);
 
         if (socket_msg[0] == 'O')
@@ -264,12 +267,13 @@ int main(int argc, char *argv[])
                 strcpy(sub_string_2, interface_msg + 3);
                 write_and_wait_echo(obstacles_socket, sub_string_2, sizeof(sub_string_2), log_file, SERVER);
                 printf("SENT %s to obstacles.c and targets.c\n", sub_string_2);
-                printf(msg, "SENT %s to obstacles.c and targets.c\n", sub_string_2);
+                sprintf(msg, "SENT %s to obstacles.c and targets.c\n", sub_string_2);
                 log_msg(log_file, SERVER, msg);
             }
             if (interface_msg[0] == 'G')
             {
                 write_and_wait_echo(targets_socket, interface_msg, sizeof(interface_msg), log_file, SERVER);
+                printf("%s\n", interface_msg);
             }
             
         }
