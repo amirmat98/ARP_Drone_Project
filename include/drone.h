@@ -8,7 +8,7 @@
 
 #define MASS 1.0    // Mass of the object
 #define DAMPING 1 // Damping coefficient
-#define D_T 0.1 // Time interval in seconds
+#define TIME_INTERVAL 0.1 // Time interval in seconds
 #define F_MAX 30.0 // Maximal force that can be acted on the drone's motors
 #define EXT_FORCE_MAX 40.0 // Maximum external force on any axis.
 
