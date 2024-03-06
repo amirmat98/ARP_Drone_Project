@@ -1,11 +1,10 @@
 #include "main.h"
 #include "import.h"
 
-// Serverless pipes (fd)
+
+// New pipes working with server file descriptors
 int key_pressing_des[2];
 int lowest_target_des[2];
-
-// New pipes working with server (fd)
 int km_server[2];
 int server_drone[2];
 int interface_server[2];
@@ -69,45 +68,45 @@ int main(int argc, char *argv[])
     int number_process = 0; //number of processes
 
     /* Server  */
-    char *server_args[] = {"konsole", "-e", "./build/server", server_fds, NULL};
-    server_pid = create_child(server_args[0], server_args);
+    char *server_args[] = {"konsole", "-e", "./build/server", server_fds, NULL}; // Server arguments for command line parsing and parsing file descriptors
+    server_pid = create_child(server_args[0], server_args); // Create server process with arguments and file descriptors
     number_process++;
     usleep(delay * 10); // little bit more time for server
 
     /* Targets */
-    char *targets_args[] = {"./build/targets", targets_fds, NULL};
-    targets_pid = create_child(targets_args[0], targets_args);
+    char *targets_args[] = {"./build/targets", targets_fds, NULL}; // Targets arguments for command line parsing and parsing file descriptors
+    targets_pid = create_child(targets_args[0], targets_args); // Create targets process with arguments and file descriptors
     number_process++;
     usleep(delay);
 
     /* Obstacles */
-    char *obstacles_args[] = {"./build/obstacles", obstacles_fds, NULL};
-    obstacles_pid = create_child(obstacles_args[0], obstacles_args);
+    char *obstacles_args[] = {"./build/obstacles", obstacles_fds, NULL}; // Obstacles arguments for command line parsing and parsing file descriptors
+    obstacles_pid = create_child(obstacles_args[0], obstacles_args); // Create obstacles process with arguments and file descriptors
     number_process++;
     usleep(delay);
 
     /* Keyboard manager */
-    char *km_args[] = {"./build/key_manager", key_manager_fds, NULL};
-    km_pid = create_child(km_args[0], km_args);
+    char *km_args[] = {"./build/key_manager", key_manager_fds, NULL}; // Keyboard manager arguments for command line parsing and parsing file descriptors
+    km_pid = create_child(km_args[0], km_args); // Create keyboard manager process with arguments and file descriptors
     number_process++;
     usleep(delay);
 
     /* Drone */
-    char *drone_args[] = {"konsole", "-e", "./build/drone", drone_fds, NULL};
-    drone_pid = create_child(drone_args[0], drone_args);
+    char *drone_args[] = {"konsole", "-e", "./build/drone", drone_fds, NULL}; // Drone arguments for command line parsing and parsing file descriptors
+    drone_pid = create_child(drone_args[0], drone_args); // Create drone process with arguments and file descriptors
     number_process++;
     usleep(delay);
 
     /* Watchdog */
-    char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL};
-    wd_pid = create_child(wd_args[0], wd_args);
+    char *wd_args[] = {"konsole", "-e", "./build/watchdog", NULL}; // Watchdog arguments for command line parsing and parsing file descriptors
+    wd_pid = create_child(wd_args[0], wd_args); // Create watchdog process with arguments and file descriptors
     number_process++;
     // printf("Watchdog Created\n");
     
 
     /* Window - Interface */
-    char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL};
-    window_pid = create_child(window_args[0], window_args);
+    char *window_args[] = {"konsole", "-e", "./build/interface", interface_fds, NULL}; // Window arguments for command line parsing and parsing file descriptors
+    window_pid = create_child(window_args[0], window_args); // Create window process with arguments and file descriptors
     number_process++;
     usleep(delay);
 

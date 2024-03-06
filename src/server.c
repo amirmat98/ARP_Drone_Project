@@ -22,10 +22,9 @@ sem_t *sem_wd_1, *sem_wd_2, *sem_wd_3;  // Semaphores for watchdog
 
 int main(int argc, char *argv[])
 {
-
-    clean_up();
+    clean_up(); // Clean up everything before starting
     
-    get_args(argc, argv);
+    get_args(argc, argv); // Get arguments from command line
 
     /* Sigaction */
     struct sigaction sa;
@@ -58,13 +57,12 @@ int main(int argc, char *argv[])
         char km_msg[MSG_LEN];
         if(read_from_pipe(km_server[0], km_msg))
         {
-            // Read acknowledgement
-            printf("RECEIVED %s from key_manager.c\n", km_msg);
+            printf("RECEIVED %s from key_manager.c\n", km_msg); // Read acknowledgement
             fflush(stdout);
-            // Response
-            char response_km_msg[MSG_LEN*2];
+
+            char response_km_msg[MSG_LEN*2]; // Response to key_manager.c
             sprintf(response_km_msg, "K:%s", km_msg);
-            write_to_pipe(server_drone[1], response_km_msg);
+            write_to_pipe(server_drone[1], response_km_msg); // Send Response to drone.c
             printf("SENT %s to drone.c\n", response_km_msg);
             fflush(stdout);
         }

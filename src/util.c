@@ -73,11 +73,12 @@ void write_message_to_logger(int who, int type, char *msg)
 
 int read_from_pipe(int pipe_des, char message[])
 {
-    struct timeval timeout;
-    timeout.tv_sec = 0;
+    // read from pipe descriptor
+    struct timeval timeout; // timeout for reading 
+    timeout.tv_sec = 0; 
     timeout.tv_usec = 0;
     fd_set read_pipe;
-    FD_ZERO(&read_pipe);
+    FD_ZERO(&read_pipe); 
     FD_SET(pipe_des, &read_pipe);
 
     char buffer[MSG_LEN];
