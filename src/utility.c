@@ -169,31 +169,27 @@ int read_and_echo_non_blocking(int socket_des, char socket_msg[], char* log_file
         return 0;
         // No data available
     }
-    else
+    
+    // Data is available. Read from the socket
+    bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
+    if (bytes_read < 0) 
     {
-        // Data is available. Read from the socket
-        bytes_read = read(socket_des, socket_msg, MSG_LEN - 1);
-        if (bytes_read < 0) 
-        {
-            perror("ERROR reading from socket");
-        }
-
-        else if (bytes_read == 0)
-        {
-            return 0;
-            // Connection closed
-        }
-        else if (socket_msg[0] == '\0')
-        {
-            return 0;
-            // Empty message
-        }
-
-        // Print the received message
-        // printf("[SOCKET] Received: %s\n", socket_msg);
-        sprintf(msg_logs, "[SOCKET] Received: %s\n", socket_msg);
-        log_msg(log_file, log_who, msg_logs);
+        perror("ERROR reading from socket");
     }
+
+    else if (bytes_read == 0)
+    {
+        return 0;
+        // Connection closed
+    }
+    else if (socket_msg[0] == '\0')
+    {
+        return 0;
+        // Empty message
+    }
+
+    sprintf(msg_logs, "[SOCKET] Received: %s\n", socket_msg);
+    log_msg(log_file, log_who, msg_logs);
 
     // Echo the message back to the client.
     block_signal(SIGUSR1);
@@ -218,22 +214,20 @@ void write_and_wait_echo(int socket_des, char socket_msg[], size_t msg_size, cha
     char response_msg[MSG_LEN];
 
     char msg[1024];
+    block_signal(SIGUSR1);
+    bytes_written = write(socket_des, socket_msg, msg_size);
+    unblock_signal(SIGUSR1);
+    if (bytes_written < 0)
+    {
+        perror("ERROR writing to socket");
+    }
+    sprintf(msg, "[SOCKET] Sent: %s\n", socket_msg);
+    log_msg(log_file, log_who, msg);
+    // Clear the buffer
+    bzero(response_msg, MSG_LEN);
 
     while(correct_echo == 0)
     {
-        block_signal(SIGUSR1);
-        bytes_written = write(socket_des, socket_msg, msg_size);
-        unblock_signal(SIGUSR1);
-        if (bytes_written < 0)
-        {
-            perror("ERROR writing to socket");
-        }
-        sprintf(msg, "[SOCKET] Sent: %s\n", socket_msg);
-        log_msg(log_file, log_who, msg);
-
-        // Clear the buffer
-        bzero(response_msg, MSG_LEN);
-
         while(response_msg[0] == '\0')
         {
             // Data is available for reading, so read from the socket

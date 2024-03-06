@@ -1,6 +1,5 @@
 # Please write in the format that is described below: (TYPE IP:PORT)
 
-
 # How to configure the TYPES
 # server: The data on targets and obstacles will be sent by another computer, and this machine will wait.
 # client: The data that our targets and obstacles procedures generate will be transmitted to another machine.
@@ -11,4 +10,4 @@
 # For the client, note down the Internet Protocol address of the distant system as well as its port. (client 192.168.1.20:2000)
 # For autonomous write localhost and a port (autonomous localhost:2000)
 
-server 130.251.107.122:1234
+server 192.168.144.243:1234

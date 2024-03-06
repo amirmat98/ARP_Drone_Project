@@ -5,7 +5,7 @@
 #define CONFIG_PATH "./configuration.txt"
 
 // Pipes Constants
-#define MSG_LEN 256
+#define MSG_LEN 1024
 
 // Socket Constants
 #define MSG_BUF_LEN 1024

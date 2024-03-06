@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     /* IDENTIFICATION WITH SERVER */
     /////////////////////////////////////////////////////
 
-    char init_msg[] = "OI"; // Adjust the size based on your requirements
+    char init_msg[MSG_LEN] = "OI"; // Adjust the size based on your requirements
     write_and_wait_echo(socket_fd, init_msg, sizeof(init_msg), log_file, OBS);
 
     //////////////////////////////////////////////////////
@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
     screen_size_x = (int)temp_scx;
     screen_size_y = (int)temp_scy;
 
+    sleep(1);
 
     while (1)
     {
