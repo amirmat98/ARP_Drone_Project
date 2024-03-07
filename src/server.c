@@ -191,13 +191,13 @@ int main(int argc, char *argv[])
         }
         else
         {
+            // printf("AMIR\n");
             close(new_socket_fd);
         }
         
     }
 
     char prev_drone_msg[MSG_LEN] = "";
-
 
     //Main loop
     while(1)
@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
         char interface_msg[MSG_LEN];
         memset(interface_msg, 0 , MSG_LEN);
 
+
         if (read_pipe_non_blocking(interface_server[0], interface_msg) == 1)
         {
             // Read acknowledgement
@@ -256,11 +257,13 @@ int main(int argc, char *argv[])
             log_msg(log_file, SERVER, msg);
             fflush(stdout);
 
+
             if (interface_msg[0] == 'I' && interface_msg[1] == '2')
             {
                 // Send to socket: Client Targets
                 char sub_string_1[MSG_LEN];
                 strcpy(sub_string_1, interface_msg + 3);
+                
                 write_and_wait_echo(targets_socket, sub_string_1, sizeof(sub_string_1), log_file, SERVER);
                 // Send to socket: Client Obstacles
                 char sub_string_2[MSG_LEN];

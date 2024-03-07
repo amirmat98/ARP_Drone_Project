@@ -59,7 +59,9 @@ int main(int argc, char *argv[])
     /* SET INITIAL DRONE POSITION */
     // Obtain the screen dimensions
     int screen_size_x;
+    // int screen_size_x = 500;
     int screen_size_y;
+    // int screen_size_y = 444;
     getmaxyx(stdscr, screen_size_y, screen_size_x);
      // Initial drone position will be the middle of the screen.
     int drone_x = screen_size_x / 2;
