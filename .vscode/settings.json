@@ -20,7 +20,8 @@
         "stdbool.h": "c",
         "netdb.h": "c",
         "drone.h": "c",
-        "obstacles.h": "c"
+        "obstacles.h": "c",
+        "ncurses.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

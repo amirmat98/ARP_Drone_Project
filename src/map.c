@@ -107,6 +107,11 @@ int main(int argc, char *argv[])
 
     //----------------------------------------------------------------------------------------//
 
+    /* Intro message */
+    show_intro_message(screen_size_x, screen_size_y);
+
+    //----------------------------------------------------------------------------------------//
+
     while (1)
     {
         //////////////////////////////////////////////////////
@@ -170,6 +175,7 @@ int main(int argc, char *argv[])
                 parse_target_message(server_msg, targets, &number_targets, original_targets);
                 obtained_targets = 1;
             }
+            
         }
 
         // Re-read the pipe if neither targets nor obstacles have been obtained
@@ -504,4 +510,49 @@ void convert_interface_cordination_to_standard(int x, int y, int *new_x, int *ne
     getmaxyx(stdscr, max_y, max_x);
     *new_x = x - (max_x / 2);
     *new_y = (max_y / 2) - y;
+}
+
+void show_intro_message(int x, int y)
+{
+    clear();
+
+    char intro_msg[MSG_LEN];
+
+    sprintf(intro_msg, "Welcome to the Drone Game!");
+    attron(COLOR_PAIR(1));
+    mvprintw((10), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+    attroff(COLOR_PAIR(1));
+
+    sprintf(intro_msg, "This game is designed and implemented by AmirMahdi Matin - s5885715@studenti.unige.it");
+    attron(COLOR_PAIR(3));
+    mvprintw((y - 10), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+    attroff(COLOR_PAIR(3));  
+
+
+    sprintf(intro_msg, "Use 'W' and 'X' for Up and Down of the Drone");
+    mvprintw((y/2 - 10), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+
+    sprintf(intro_msg, "Use 'A' and 'D' for Left and Right of the Drone");
+    mvprintw((y/2 - 9), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+
+    sprintf(intro_msg, "Use 'S' to stop the Drone");
+    mvprintw((y/2 - 8), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+
+    sprintf(intro_msg, "Use 'H' for abort the movment of the Drone in emergency mode");
+    mvprintw((y/2 - 7), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+    
+    refresh();
+
+    for (int i = 0; i <= 10; i++)
+    {
+        sprintf(intro_msg, "The game will start in %d seconds", 10 - i);
+        attron(COLOR_PAIR(2));
+        mvprintw((y/2), (x - strlen(intro_msg)) / 2, "%s", intro_msg);
+        attroff(COLOR_PAIR(2));
+        refresh();
+        sleep(1);
+    }
+
+    refresh();
+
 }

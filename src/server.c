@@ -47,9 +47,13 @@ int main(int argc, char *argv[])
     read_args_from_file(CONFIG_PATH, program_type, socket_data);
     char host_name[MSG_LEN];
     int port_num;
+
     printf("Program type: %s\n", program_type);
     sprintf(msg, "Program type: %s", program_type);
     log_msg(log_file, SERVER, msg);
+    // char program_type_msg[MSG_LEN];
+    // sprintf(program_type_msg, "P:%s", program_type);
+    //write_to_pipe(server_interface[1], program_type_msg);
 
     parse_host_port(socket_data, host_name, &port_num);
     printf("Host name: %s\n", host_name);

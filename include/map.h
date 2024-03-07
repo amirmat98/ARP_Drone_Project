@@ -29,5 +29,6 @@ void calculate_timer(int counter, int *timer_color);
 
 void convert_interface_cordination_to_standard(int x, int y, int *new_x, int *new_y);
 
+void show_intro_message(int x, int y);
 
 #endif //MAP_H
