@@ -308,6 +308,7 @@ int main(int argc, char *argv[])
         char obstacles_msg[MSG_LEN];
         if (read_and_echo_non_blocking(obstacles_socket, obstacles_msg, log_file, SERVER) == 1)
         {
+            printf("[SOCKET] Received from obstacles.c: %s\n", obstacles_msg);
             // Send to interface.c
             write_to_pipe(server_interface[1],obstacles_msg);
             sprintf(msg, "[PIPE] Send to interface.c: %s\n", obstacles_msg);
@@ -328,6 +329,7 @@ int main(int argc, char *argv[])
 
         if (read_and_echo_non_blocking(targets_socket, targets_msg, log_file, SERVER) == 1)
         {
+            printf("[SOCKET] Received from targets.c: %s\n", targets_msg);
             // Send to interface.c
             write_to_pipe(server_interface[1],targets_msg);
             sprintf(msg, "[PIPE] Sent to interface.c: %s\n", targets_msg);
