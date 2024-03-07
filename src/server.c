@@ -49,10 +49,8 @@ int main(int argc, char *argv[])
     //Main loop
     while(1)
     {
-
-        //////////////////////////////////////////////////////
-        /* Handle pipe from key_manager.c */
-        /////////////////////////////////////////////////////
+        // ----------------------------------------------------------------------------------------//
+        /* Handle pipe from key_manager */
 
         char km_msg[MSG_LEN];
         if(read_from_pipe(km_server[0], km_msg))
@@ -67,10 +65,8 @@ int main(int argc, char *argv[])
             fflush(stdout);
         }
 
-
-        //////////////////////////////////////////////////////
-        /* Handle pipe from interface.c */
-        /////////////////////////////////////////////////////
+        // ----------------------------------------------------------------------------------------//
+        /* Handle pipe from interface */
         
         char interface_msg[MSG_LEN];
         if(read_from_pipe(interface_server[0], interface_msg))
@@ -91,12 +87,10 @@ int main(int argc, char *argv[])
             }
         }
 
-        //////////////////////////////////////////////////////
-        /* Handle pipe from drone.c */
-        /////////////////////////////////////////////////////
+        //---------------------------------------------------------------------------------------//
+        /* Handle pipe from drone */
 
         char drone_msg[MSG_LEN];
-
         if(read_from_pipe(drone_server[0], drone_msg))
         {
             write_to_pipe(server_interface[1], drone_msg);
@@ -111,9 +105,8 @@ int main(int argc, char *argv[])
         }
         
 
-        //////////////////////////////////////////////////////
-        /* Handle pipe from obstacles.c */
-        /////////////////////////////////////////////////////
+        //---------------------------------------------------------------------------------------//
+        /* Handle pipe from obstacles */
 
         char obstacles_msg[MSG_LEN];
         if (read_from_pipe(obstacles_server[0], obstacles_msg))
@@ -131,9 +124,8 @@ int main(int argc, char *argv[])
             fflush(stdout);
         }
 
-        //////////////////////////////////////////////////////
-        /* Handle pipe from targets.c */
-        /////////////////////////////////////////////////////
+        //---------------------------------------------------------------------------------------//
+        /* Handle pipe from targets */
 
         char targets_msg[MSG_LEN];
         if (read_from_pipe(targets_server[0], targets_msg))
